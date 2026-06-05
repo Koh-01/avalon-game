@@ -225,7 +225,7 @@ async def api_sync(request):
 
     return web.json_response({
         "v": game.version,
-        "notifications": game.notifications, # 返回所有历史消息，前端通过长度判断新消息
+        "notifications": game.notifications, 
         "state": make_public_state(game, player_id) if p else None
     })
 
@@ -300,11 +300,33 @@ async def api_action(request):
 
 
 async def index(request):
+    """直接读取同一层级的 index.html"""
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    return web.FileResponse(os.path.join(BASE_DIR, 'index.html'))
+    file_path = os.path.join(BASE_DIR, 'index.html')
+    if os.path.exists(file_path):
+        return web.FileResponse(file_path)
+    return web.Response(text="⚠️ 找不到 index.html，请确保它和 server.py 放在同一个文件夹的根目录下！", status=404)
 
 def build_app():
-    app = web.Application()
+    @web.middleware
+    async def cors_middleware(request, handler):
+        if request.method == 'OPTIONS':
+            resp = web.Response()
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+            resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+            return resp
+        try:
+            resp = await handler(request)
+        except Exception:
+            raise
+            
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return resp
+
+    app = web.Application(middlewares=[cors_middleware])
     app.router.add_get('/', index)
     app.router.add_get('/health', lambda r: web.json_response({"status": "ok"}))
     app.router.add_post('/api/room', api_create_room)
