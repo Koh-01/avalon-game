@@ -67,7 +67,7 @@ class Game:
     winner: Optional[str] = None
     assassin_target: Optional[str] = None
     night_ack: set = field(default_factory=set)
-    # ★ 新增：持久化记录上一轮的结果
+    # 持久化记录上一轮的结果
     last_vote_summary: str = ""
     last_mission_summary: str = ""
 
@@ -127,8 +127,8 @@ def make_public_state(game: Game, viewer_id: str):
         "visible_evil_to_merlin": visible_evil, "visible_to_percival": visible_percival,
         "voted": viewer_id in game.votes, "mission_played": viewer_id in game.mission_cards,
         "vote_tally": len(game.votes), "mission_tally": len(game.mission_cards), "total_players": len(game.players),
-        "last_vote_summary": game.last_vote_summary,       # ★ 传给前端
-        "last_mission_summary": game.last_mission_summary  # ★ 传给前端
+        "last_vote_summary": game.last_vote_summary,
+        "last_mission_summary": game.last_mission_summary
     }
 
 # ─────────────────────────────────────────
@@ -138,7 +138,7 @@ def make_public_state(game: Game, viewer_id: str):
 def process_vote(game: Game):
     approve = sum(1 for v in game.votes.values() if v)
     reject = len(game.votes) - approve
-    game.last_vote_summary = f"{approve} 赞成 / {reject} 反对" # ★ 记录投票结果
+    game.last_vote_summary = f"{approve} 赞成 / {reject} 反对"
     
     if approve > reject:
         game.phase = "execute"
@@ -167,7 +167,7 @@ def process_mission(game: Game):
     success = fail_count < need_fails
 
     game.quest_results.append(success)
-    game.last_mission_summary = f"{success_count} 成功 / {fail_count} 失败" # ★ 记录任务结果
+    game.last_mission_summary = f"{success_count} 成功 / {fail_count} 失败"
     
     result_str = f"✅ 任务成功！({game.last_mission_summary})" if success else f"❌ 任务失败！({game.last_mission_summary})"
     color = "green" if success else "red"
@@ -259,7 +259,7 @@ async def api_action(request):
             game.round, game.vote_reject_count, game.phase = 0, 0, "night"
             game.leader_idx = random.randint(0, n - 1)
             game.team, game.votes, game.mission_cards, game.quest_results, game.night_ack = [], {}, {}, [], set()
-            game.last_vote_summary, game.last_mission_summary = "", "" # ★ 清空记录
+            game.last_vote_summary, game.last_mission_summary = "", ""
             game.notify("🌙 夜晚降临，请查看您的角色信息...", "purple")
 
     elif action == "night_ack":
@@ -302,7 +302,7 @@ async def api_action(request):
         game.phase = "lobby"
         game.round, game.vote_reject_count, game.winner, game.assassin_target = 0, 0, None, None
         game.team, game.votes, game.mission_cards, game.quest_results, game.night_ack = [], {}, {}, [], set()
-        game.last_vote_summary, game.last_mission_summary = "", "" # ★ 清空记录
+        game.last_vote_summary, game.last_mission_summary = "", ""
         for p in game.players: p.role = None
         game.notify(f"🔄 房主重置了游戏，回到大厅", "orange")
 
