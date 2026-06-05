@@ -363,10 +363,10 @@ async def handle_message(ws, game: Game, player: Player, msg: dict):
         await start_game(game)
 
     elif action == "force_reset":
-        # 强制重置游戏到大厅（仅房主可用），保留玩家列表
         if player.id != game.host_id:
             await ws.send_json({"type": "error", "message": "只有房主才能强制重置"})
             return
+        # 重置游戏状态，保留玩家
         game.phase = "lobby"
         game.round = 0
         game.leader_idx = 0
@@ -381,7 +381,7 @@ async def handle_message(ws, game: Game, player: Player, msg: dict):
         for p in game.players:
             p.role = None
         await broadcast(game, {"type": "state"})
-        await notify(game, f"🔄 房主 {player.name} 强制重置了游戏，所有人回到大厅", "orange")
+        await notify(game, f"🔄 房主 {player.name} 强制重置了游戏，回到大厅", "orange")
 
 # ─────────────────────────────────────────
 #  HTTP & WebSocket 路由
@@ -471,7 +471,6 @@ def build_app():
 
 if __name__ == '__main__':
     import os
-    os.makedirs("static", exist_ok=True)
     port = int(os.environ.get("PORT", 8080))
     print(f"🏰 阿瓦隆游戏服务器启动于 http://0.0.0.0:{port}")
     web.run_app(build_app(), host='0.0.0.0', port=port)
