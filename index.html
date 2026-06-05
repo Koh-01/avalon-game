@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>阿瓦隆 · Avalon</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=Noto+Serif+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.18.2.js"></script>
 <style>
 :root {
   --gold: #c9a227;
@@ -471,7 +472,6 @@ body {
 <div class="bg-stars"></div>
 <div id="notification-area"></div>
 
-<!-- MODALS -->
 <div class="modal-overlay hidden" id="modal-join">
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal('modal-join')">✕</button>
@@ -505,7 +505,6 @@ body {
 </div>
 
 <div id="app">
-  <!-- HERO PAGE -->
   <div id="page-hero" class="page active">
     <div style="font-size:5rem;filter:drop-shadow(0 0 30px rgba(201,162,39,.6));animation:float 4s ease-in-out infinite;margin-bottom:1.5rem;">🏰</div>
     <div class="title-main">AVALON</div>
@@ -519,7 +518,6 @@ body {
     <div style="margin-top:3rem;font-size:.75rem;color:rgba(245,230,200,.3);letter-spacing:.1em;">5–10 人 · 约 30 分钟 · 阵营对抗</div>
   </div>
 
-  <!-- LOBBY PAGE -->
   <div id="page-lobby" class="page">
     <div class="lobby-header">
       <div class="title-main" style="font-size:2.5rem;">🏰 圆桌议事厅</div>
@@ -560,7 +558,6 @@ body {
     </div>
   </div>
 
-  <!-- GAME PAGE -->
   <div id="page-game" class="page">
     <div class="nav-bar">
       <div class="nav-logo">⚔️ AVALON</div>
@@ -568,6 +565,13 @@ body {
         房间：<span id="game-room-code" class="text-gold"></span><br>
         <span id="nav-player-count" class="text-dim"></span>
       </div>
+      
+      <div style="margin-left: auto; margin-right: 15px;">
+        <button id="btn-voice" class="btn btn-outline btn-sm" onclick="toggleVoice()" style="border-radius: 20px;">
+          🎤 开启语音
+        </button>
+      </div>
+
       <div id="nav-host-controls" style="display:none">
         <button class="btn btn-outline btn-sm" onclick="confirmForceReset()" style="border-color:var(--crimson);color:#e07070;font-size:.7rem;padding:.3rem .7rem">
           🔄 强制重置
@@ -657,7 +661,6 @@ async function pollState() {
         currentVersion = data.v;
         gameState = data.state;
         
-        // Handle new notifications
         const notifs = data.notifications || [];
         for (let i = handledNotifCount; i < notifs.length; i++) {
           showNotify(notifs[i].msg, notifs[i].color);
@@ -1036,7 +1039,6 @@ function renderSecretInfo(s) {
     }
   }
   
-  // ★ 新增：持久化显示公共的最新情报（投票与任务结果）
   if (s.last_vote_summary || s.last_mission_summary) {
     let history = '';
     if (s.last_vote_summary) history += `<span class="info-tag" style="background:rgba(201,162,39,.1);border:1px solid var(--gold-dim);color:var(--parchment)">🗳️ 上轮投票: ${s.last_vote_summary}</span>`;
@@ -1146,6 +1148,89 @@ function renderEnd(s) {
 
 function getQuestSizes(n) { const m={5:[2,3,2,3,3],6:[2,3,4,3,4],7:[2,3,3,4,4],8:[3,4,4,5,5],9:[3,4,4,5,5],10:[3,4,4,5,5]}; return m[n]||m[7]; }
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════════
+//  VOICE CHAT (Agora Web RTC)
+// ═══════════════════════════════════════════
+// ⚠️ 注意：请务必将下方引号内的内容替换为你自己在声网控制台申请的 App ID
+const AGORA_APP_ID = d3fcca3d25ce4025b82ba33d45a34c46; 
+
+let rtcClient = null;
+let localAudioTrack = null;
+let isVoiceJoined = false;
+
+async function initAgora() {
+  if (rtcClient) return;
+  // 创建声网客户端
+  rtcClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+  // 监听其他玩家发声
+  rtcClient.on("user-published", async (user, mediaType) => {
+    await rtcClient.subscribe(user, mediaType);
+    if (mediaType === "audio") {
+      user.audioTrack.play();
+    }
+  });
+
+  // 监听其他玩家离开
+  rtcClient.on("user-unpublished", (user) => {
+    console.log("玩家离开语音:", user.uid);
+  });
+}
+
+async function toggleVoice() {
+  if (!AGORA_APP_ID || AGORA_APP_ID === "YOUR_AGORA_APP_ID_HERE") {
+    alert("请先在 index.html 底部代码中填入您的 Agora APP_ID！");
+    return;
+  }
+
+  const btn = document.getElementById('btn-voice');
+  
+  if (!isVoiceJoined) {
+    try {
+      btn.textContent = "连接中...";
+      btn.disabled = true;
+      
+      await initAgora();
+      
+      // 加入频道（使用游戏房间号确保大家在同一个语音房间）
+      await rtcClient.join(AGORA_APP_ID, roomId, null, playerId);
+      
+      // 采集本地麦克风
+      localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+      await rtcClient.publish([localAudioTrack]);
+      
+      isVoiceJoined = true;
+      btn.textContent = "🔊 语音开启中 (点击关闭)";
+      btn.style.backgroundColor = "rgba(39, 174, 96, 0.2)"; 
+      btn.style.borderColor = "#27ae60";
+      showNotify("已成功连接语音频道！", "green");
+      
+    } catch (error) {
+      console.error("语音加入失败", error);
+      showNotify("语音连接失败，请检查麦克风权限", "red");
+      btn.textContent = "🎤 开启语音";
+    } finally {
+      btn.disabled = false;
+    }
+  } else {
+    try {
+      if (localAudioTrack) {
+        localAudioTrack.close();
+        localAudioTrack = null;
+      }
+      await rtcClient.leave();
+      isVoiceJoined = false;
+      
+      btn.textContent = "🎤 开启语音";
+      btn.style.backgroundColor = "transparent";
+      btn.style.borderColor = "var(--gold-dim)";
+      showNotify("已退出语音频道", "gray");
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
 </script>
 </body>
 </html>
