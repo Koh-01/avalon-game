@@ -1,6 +1,17 @@
+*(当你在 Git 提交并推送后，Render 看到这个文件就会自动帮你下载声网的加密算法包。)*
+
+---
+
+### 第二步：更新 `server.py` (自动生成免费 Token)
+
+我们在服务端的 `/api/sync`（同步状态接口）中加入了一段逻辑：当玩家在线时，后端会自动用你的 `App ID` 和 `Primary Certificate` 免费计算出一个临时语音 Token，并在大厅和游戏期间实时下发给前端。
+
+**请用以下完整代码覆盖你的 `server.py`：**
+
+```python
 #!/usr/bin/env python3
 """
-阿瓦隆 (Avalon) 网络游戏服务器 - HTTP 长轮询版
+阿瓦隆 (Avalon) 网络游戏服务器 - HTTP 长轮询版 + 自动免费语音 Token
 彻底移除 WebSocket，完美适配 Render 免费层
 """
 
@@ -13,6 +24,18 @@ import os
 from dataclasses import dataclass, field
 from typing import Optional
 from aiohttp import web
+
+# ★ 导入声网官方 Token 生成器
+try:
+    from agora_token_builder import RtcTokenBuilder
+except ImportError:
+    RtcTokenBuilder = None
+
+# ─────────────────────────────────────────
+#  声网配置（请填入你截图里的两串密钥）
+# ─────────────────────────────────────────
+AGORA_APP_ID = "d3fcca3d25ce4025b82ba33d45a34c46"
+AGORA_APP_CERTIFICATE = "845e2d44d3cb43f889966e355668b212"
 
 # ─────────────────────────────────────────
 #  数据模型
@@ -67,7 +90,6 @@ class Game:
     winner: Optional[str] = None
     assassin_target: Optional[str] = None
     night_ack: set = field(default_factory=set)
-    # 持久化记录上一轮的结果
     last_vote_summary: str = ""
     last_mission_summary: str = ""
 
@@ -90,6 +112,25 @@ rooms: dict[str, Game] = {}
 # ─────────────────────────────────────────
 #  工具函数
 # ─────────────────────────────────────────
+
+def generate_voice_token(room_id: str, player_id: str) -> str:
+    """★ 核心逻辑：利用声网算法库在后端实时免费计算 Token"""
+    if not RtcTokenBuilder or not AGORA_APP_CERTIFICATE or AGORA_APP_CERTIFICATE.startswith("请替换"):
+        return ""
+    try:
+        expiration_time_in_seconds = 3600  # Token 有效期 1 小时（长轮询每次更新都会刷新，时间足够）
+        import time
+        current_time = int(time.time())
+        privilege_expired_ts = current_time + expiration_time_in_seconds
+        
+        # 算出一串完全合法的免费 Token
+        token = RtcTokenBuilder.buildTokenWithUserAccount(
+            AGORA_APP_ID, AGORA_APP_CERTIFICATE, room_id, player_id, 1, privilege_expired_ts
+        )
+        return token
+    except Exception as e:
+        print(f"Token generation failed: {e}")
+        return ""
 
 def make_public_state(game: Game, viewer_id: str):
     vp = game.get_player(viewer_id)
@@ -232,9 +273,13 @@ async def api_sync(request):
             break
         await asyncio.sleep(0.5)
 
+    # ★ 核心改动：在下发状态的同时，在后端动态生成最新有效的语音 Token
+    voice_token = generate_voice_token(room_id, player_id)
+
     return web.json_response({
         "v": game.version,
         "notifications": game.notifications, 
+        "voice_token": voice_token,   # ★ 发送给前端
         "state": make_public_state(game, player_id) if p else None
     })
 
