@@ -823,7 +823,7 @@ function renderLobby(s) {
   document.getElementById('lobby-room-code').textContent = s.room_id;
   document.getElementById('lobby-player-count').textContent = s.players.length;
   const grid = document.getElementById('lobby-player-grid');
-  const avatars = ['🧙','⚔️','🛡️','🏹','🗡️','🔮','👑','🦅','🐺','🔱'];
+  const avatars = ['🛡️','🛡️','🛡️','🛡️','🛡️','🛡️','🛡️','🛡️','🛡️','🛡️'];
   grid.innerHTML = s.players.map((p,i) => `
     <div class="player-slot ${p.id===s.my_id?'me':''}  filled">
       <div class="player-avatar">${avatars[i%avatars.length]}</div>
