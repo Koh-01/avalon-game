@@ -8,6 +8,7 @@ import asyncio
 import json
 import random
 import uuid
+import traceback
 from dataclasses import dataclass, field, asdict
 from typing import Optional
 from aiohttp import web
@@ -87,15 +88,10 @@ class Game:
         return next((p for p in self.players if p.id == pid), None)
 
     def evil_players(self):
-        return [p for p in self.players if ROLES[p.role]["team"] == "evil"]
+        return [p for p in self.players if p.role and ROLES[p.role]["team"] == "evil"]
 
     def good_players(self):
-        return [p for p in self.players if ROLES[p.role]["team"] == "good"]
-
-# ─────────────────────────────────────────
-#  全局状态
-# ─────────────────────────────────────────
-rooms: dict[str, Game] = {}
+        return [p for p in self.players if p.role and ROLES[p.role]["team"] == "good"]
 
 # ─────────────────────────────────────────
 #  工具函数
@@ -154,6 +150,7 @@ def make_public_state(game: Game, viewer_id: str):
         "leader_id": game.leader().id if game.players else "",
         "players": players_info,
         "winner": game.winner,
+        "assassin_target": game.assassin_target, # 修复：加入刺客目标
         "host_id": game.host_id,
         "my_id": viewer_id,
         "my_role": viewer_role,
@@ -177,8 +174,9 @@ async def broadcast(game: Game, msg: dict, exclude=None):
                 if msg.get("type") == "state":
                     personal["data"] = make_public_state(game, p.id)
                 await p.ws.send_json(personal)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Broadcast error to {p.name}: {e}")
+                traceback.print_exc()
 
 async def send_state(game: Game, player: Player):
     if player.ws and player.online:
@@ -187,8 +185,9 @@ async def send_state(game: Game, player: Player):
                 "type": "state",
                 "data": make_public_state(game, player.id)
             })
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Send state error to {player.name}: {e}")
+            traceback.print_exc()
 
 async def notify(game: Game, message: str, color="white"):
     await broadcast(game, {"type": "notify", "message": message, "color": color})
@@ -438,7 +437,8 @@ async def ws_handler(request):
                 else:
                     await handle_message(ws, game, player, msg)
             except Exception as e:
-                print(f"Error: {e}")
+                print(f"WebSocket Message Error: {e}")
+                traceback.print_exc()
         elif raw.type in (aiohttp.WSMsgType.ERROR, aiohttp.WSMsgType.CLOSE):
             break
 
@@ -468,18 +468,26 @@ def build_app():
 
     @web.middleware
     async def cors_middleware(request, handler):
+        # 修复：预检请求处理
         if request.method == 'OPTIONS':
             resp = web.Response()
-        else:
-            try:
-                resp = await handler(request)
-            except web.HTTPException:
-                raise
-            except Exception as e:
-                raise
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+            resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+            return resp
+            
+        try:
+            resp = await handler(request)
+        except web.HTTPException:
+            raise
+        except Exception as e:
+            raise
+            
+        # 修复：如果是 WebSocket，不要去修改 Headers
+        if not isinstance(resp, web.WebSocketResponse):
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+            resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
         return resp
 
     app = web.Application(middlewares=[cors_middleware])
