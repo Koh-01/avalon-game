@@ -538,6 +538,11 @@ body {
       <div id="lobby-actions" style="text-align:center">
         <div class="text-dim" style="font-size:.85rem;margin-bottom:1rem;">等待房主开始游戏（需要至少5名玩家）</div>
       </div>
+      <div id="lobby-host-reset" style="display:none;text-align:center;margin-top:.8rem">
+        <button class="btn btn-outline btn-sm" onclick="confirmForceReset()" style="border-color:var(--crimson);color:#e07070;font-size:.75rem">
+          🔄 强制重置游戏（清除所有进度回到大厅）
+        </button>
+      </div>
     </div>
 
     <div class="lobby-info">
@@ -564,7 +569,7 @@ body {
         <span id="nav-player-count" class="text-dim"></span>
       </div>
       <div id="nav-host-controls" style="display:none">
-        <button class="btn btn-outline btn-sm" onclick="confirmForceReset()" title="游戏卡住时强制回到大厅" style="border-color:var(--crimson);color:#e07070;font-size:.7rem;padding:.3rem .7rem">
+        <button class="btn btn-outline btn-sm" onclick="confirmForceReset()" style="border-color:var(--crimson);color:#e07070;font-size:.7rem;padding:.3rem .7rem">
           🔄 强制重置
         </button>
       </div>
@@ -628,11 +633,21 @@ async function doCreateRoom() {
   const name = document.getElementById('create-name').value.trim();
   if (!name) return alert('请输入名字');
   playerName = name;
-  const resp = await fetch('/api/room', { method: 'POST' });
-  const data = await resp.json();
-  roomId = data.room_id;
-  closeModal('modal-create');
-  connectWS();
+  const btn = document.querySelector('#modal-create .btn-gold');
+  btn.disabled = true;
+  btn.textContent = '创建中...';
+  try {
+    const resp = await fetch('/api/room', { method: 'POST' });
+    if (!resp.ok) throw new Error('服务器错误 ' + resp.status);
+    const data = await resp.json();
+    roomId = data.room_id;
+    closeModal('modal-create');
+    connectWS();
+  } catch(e) {
+    alert('创建房间失败：' + e.message + '\n\n请确认服务器已启动，或刷新页面重试。');
+    btn.disabled = false;
+    btn.textContent = '建立圆桌';
+  }
 }
 
 async function doJoinRoom() {
@@ -642,6 +657,9 @@ async function doJoinRoom() {
   if (!code) return alert('请输入房间代码');
   playerName = name;
   roomId = code;
+  const btn = document.querySelector('#modal-join .btn-gold');
+  btn.disabled = true;
+  btn.textContent = '连接中...';
   closeModal('modal-join');
   connectWS();
 }
@@ -710,9 +728,12 @@ function renderGame() {
   if (!gameState) return;
   const s = gameState;
 
-  // 显示/隐藏房主强制重置按钮
-  const hostCtrl = document.getElementById('nav-host-controls');
-  if (hostCtrl) hostCtrl.style.display = (s.my_id === s.host_id && s.phase !== 'lobby') ? 'block' : 'none';
+  // 房主强制重置按钮：大厅和游戏中都显示
+  const lobbyReset = document.getElementById('lobby-host-reset');
+  const navCtrl = document.getElementById('nav-host-controls');
+  const isHost = s.my_id === s.host_id;
+  if (lobbyReset) lobbyReset.style.display = isHost ? 'block' : 'none';
+  if (navCtrl) navCtrl.style.display = isHost ? 'block' : 'none';
 
   if (s.phase === 'lobby') {
     showPage('page-lobby');
@@ -1271,22 +1292,19 @@ function getQuestSizes(n) {
 
 function confirmForceReset() {
   const modal = document.createElement('div');
-  modal.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;
-    display:flex;align-items:center;justify-content:center;
-  `;
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
   modal.innerHTML = `
-    <div style="background:#1a1a3a;border:1px solid var(--crimson);border-radius:8px;padding:2rem;max-width:340px;text-align:center">
-      <div style="font-size:2rem;margin-bottom:.5rem">⚠️</div>
-      <h3 style="font-family:'Cinzel',serif;color:var(--gold);margin-bottom:.8rem">强制重置游戏</h3>
-      <p style="color:var(--parchment-dark);font-size:.9rem;line-height:1.6;margin-bottom:1.2rem">
-        这将把游戏强制回到大厅，<br>
-        所有玩家保留但角色清空。<br>
-        <span style="color:#e07070">游戏进度将全部丢失！</span>
+    <div style="background:linear-gradient(135deg,#0f0f2a,#1a1a40);border:1px solid var(--crimson);border-radius:8px;padding:2rem;max-width:320px;width:90%;text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">⚠️</div>
+      <h3 style="font-family:'Cinzel',serif;color:var(--gold);margin-bottom:.8rem;font-size:1rem;letter-spacing:.1em">强制重置游戏</h3>
+      <p style="color:var(--parchment-dark);font-size:.85rem;line-height:1.7;margin-bottom:1.5rem">
+        所有玩家保留在房间内，<br>
+        角色和游戏进度将全部清空，<br>
+        <span style="color:#e07070">回到大厅重新开始。</span>
       </p>
       <div style="display:flex;gap:.8rem;justify-content:center">
-        <button onclick="this.closest('div[style]').remove()" class="btn btn-outline btn-sm">取消</button>
-        <button onclick="doForceReset(this)" class="btn btn-danger btn-sm">确认重置</button>
+        <button class="btn btn-outline btn-sm" onclick="this.closest('div[style]').remove()">取消</button>
+        <button class="btn btn-danger btn-sm" onclick="doForceReset(this)">✅ 确认重置</button>
       </div>
     </div>
   `;
