@@ -471,7 +471,6 @@ body {
 <div class="bg-stars"></div>
 <div id="notification-area"></div>
 
-<!-- MODALS -->
 <div class="modal-overlay hidden" id="modal-join">
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal('modal-join')">✕</button>
@@ -507,11 +506,10 @@ body {
 </div>
 
 <div id="app">
-  <!-- HERO PAGE -->
   <div id="page-hero" class="page active">
     <div style="font-size:5rem;filter:drop-shadow(0 0 30px rgba(201,162,39,.6));animation:float 4s ease-in-out infinite;margin-bottom:1.5rem;">🏰</div>
     <div class="title-main">AVALON</div>
-    <div class="title-sub">阿　瓦　隆</div>
+    <div class="title-sub">阿 瓦 隆</div>
     <div class="hero-divider"></div>
     <p class="hero-desc">骑士与叛徒的博弈，推理与欺骗的战场。<br>好人守护梅林，坏人潜伏其中。<br>光明与黑暗，在阿瓦隆的圆桌上决出胜负。</p>
     <div class="hero-actions">
@@ -521,7 +519,6 @@ body {
     <div style="margin-top:3rem;font-size:.75rem;color:rgba(245,230,200,.3);letter-spacing:.1em;">5–10 人 · 约 30 分钟 · 阵营对抗</div>
   </div>
 
-  <!-- LOBBY PAGE -->
   <div id="page-lobby" class="page">
     <div class="lobby-header">
       <div class="title-main" style="font-size:2.5rem;">🏰 圆桌议事厅</div>
@@ -562,7 +559,6 @@ body {
     </div>
   </div>
 
-  <!-- GAME PAGE -->
   <div id="page-game" class="page">
     <div class="nav-bar">
       <div class="nav-logo">⚔️ AVALON</div>
@@ -751,6 +747,8 @@ function send(msg) {
 //  MESSAGE HANDLER
 // ═══════════════════════════════════════════
 function handleMessage(msg) {
+  console.log("Receive msg:", msg); // 添加日志，方便本地排错
+
   if (msg.type === 'error') {
     showNotify('❌ ' + msg.message, 'red');
     return;
