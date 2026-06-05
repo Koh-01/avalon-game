@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阿瓦隆 · Avalon</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=Noto+Serif+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #c9a227;
+  --gold-light: #f0d060;
+  --gold-dim: #7a5f10;
+  --crimson: #8b1a1a;
+  --crimson-light: #c0392b;
+  --royal: #1a1a3a;
+  --royal-mid: #252550;
+  --royal-light: #2e2e6a;
+  --parchment: #f5e6c8;
+  --parchment-dark: #d4b896;
+  --good: #2980b9;
+  --good-light: #5dade2;
+  --evil: #922b21;
+  --evil-light: #e74c3c;
+  --glow-gold: 0 0 20px rgba(201,162,39,0.5), 0 0 40px rgba(201,162,39,0.2);
+  --glow-red: 0 0 20px rgba(192,57,43,0.6), 0 0 40px rgba(192,57,43,0.3);
+  --glow-blue: 0 0 20px rgba(41,128,185,0.6);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #0a0a1a;
+  color: var(--parchment);
+  font-family: 'Noto Serif SC', serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── BACKGROUND ─── */
+.bg-stars {
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(26,26,58,0.8) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(139,26,26,0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, #0a0a1a 0%, #050510 100%);
+}
+.bg-stars::before {
+  content:'';
+  position:absolute; inset:0;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, rgba(255,255,200,0.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 40%, rgba(255,255,200,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 10%, rgba(255,255,200,0.9) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 60%, rgba(255,255,200,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 70%, rgba(255,255,200,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 30%, rgba(255,255,200,0.8) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 25% 80%, rgba(255,255,200,0.9) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 90%, rgba(255,255,200,0.6) 0%, transparent 100%);
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
+@keyframes twinkle { from{opacity:.6} to{opacity:1} }
+
+/* ─── LAYOUT ─── */
+#app { position:relative; z-index:1; }
+
+/* ─── PAGES ─── */
+.page { display:none; min-height:100vh; animation: fadeIn .4s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+/* ─── TITLE ─── */
+.title-main {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: var(--glow-gold);
+  letter-spacing: .05em;
+  line-height: 1;
+}
+.title-sub {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1rem, 3vw, 1.6rem);
+  letter-spacing: .4em;
+  color: var(--parchment-dark);
+  margin-top: .5rem;
+}
+
+/* ─── HERO PAGE ─── */
+#page-hero {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh; text-align: center;
+  padding: 2rem;
+}
+.hero-crest {
+  font-size: 5rem;
+  filter: drop-shadow(0 0 30px rgba(201,162,39,0.6));
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+.hero-divider {
+  width: 300px; height: 2px; margin: 2rem auto;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.hero-desc {
+  max-width: 500px; line-height: 1.8;
+  color: var(--parchment-dark); font-size: 1rem;
+  margin-bottom: 2.5rem;
+}
+.hero-actions { display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; }
+
+/* ─── BUTTONS ─── */
+.btn {
+  font-family: 'Cinzel', serif; font-size: .9rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: .75rem 2rem; border: none; cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: all .3s ease; border-radius: 2px;
+}
+.btn::before {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(135deg, rgba(255,255,255,.1) 0%, transparent 60%);
+  pointer-events:none;
+}
+.btn-gold {
+  background: linear-gradient(135deg, #a07820, var(--gold), #e8c840, var(--gold));
+  background-size: 200% 200%;
+  color: #1a0a00; border: 1px solid var(--gold-light);
+  box-shadow: 0 4px 20px rgba(201,162,39,.4);
+}
+.btn-gold:hover {
+  background-position: right center;
+  box-shadow: var(--glow-gold), 0 6px 30px rgba(201,162,39,.5);
+  transform: translateY(-2px);
+}
+.btn-outline {
+  background: transparent; color: var(--gold);
+  border: 1px solid var(--gold-dim);
+}
+.btn-outline:hover {
+  background: rgba(201,162,39,.1); border-color: var(--gold);
+  box-shadow: var(--glow-gold);
+}
+.btn-danger {
+  background: linear-gradient(135deg, #6b1414, var(--crimson-light));
+  color: var(--parchment); border: 1px solid var(--crimson-light);
+}
+.btn-danger:hover {
+  box-shadow: var(--glow-red); transform: translateY(-2px);
+}
+.btn-sm { padding: .4rem 1rem; font-size: .75rem; }
+.btn:disabled { opacity:.4; cursor:not-allowed; transform:none!important; }
+
+/* ─── LOBBY PAGE ─── */
+#page-lobby { padding: 2rem; max-width: 900px; margin: 0 auto; }
+.lobby-header { text-align:center; margin-bottom: 2rem; padding-top: 2rem; }
+.room-code-display {
+  display: inline-flex; align-items:center; gap: 1rem;
+  background: rgba(201,162,39,.1); border: 1px solid var(--gold-dim);
+  border-radius: 4px; padding: .8rem 1.5rem; margin: 1rem 0;
+}
+.room-code {
+  font-family: 'Cinzel Decorative', serif; font-size: 2rem;
+  color: var(--gold); letter-spacing: .3em;
+  text-shadow: var(--glow-gold);
+}
+.player-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem; margin: 1.5rem 0;
+}
+.player-slot {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(201,162,39,.2);
+  border-radius: 4px; padding: 1rem; text-align: center;
+  transition: all .3s;
+}
+.player-slot.filled { border-color: rgba(201,162,39,.5); }
+.player-slot.me { border-color: var(--gold); box-shadow: 0 0 15px rgba(201,162,39,.2); }
+.player-avatar { font-size: 2.5rem; margin-bottom: .5rem; }
+.player-name { font-size: .9rem; color: var(--parchment); }
+.player-host-badge {
+  font-size: .65rem; color: var(--gold);
+  font-family: 'Cinzel', serif; letter-spacing: .1em;
+}
+.lobby-info {
+  background: rgba(255,255,255,.03); border: 1px solid rgba(201,162,39,.15);
+  border-radius: 4px; padding: 1.5rem; margin: 1rem 0;
+}
+.lobby-info h3 {
+  font-family: 'Cinzel', serif; color: var(--gold);
+  margin-bottom: 1rem; font-size: 1rem; letter-spacing: .1em;
+}
+.role-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+.role-table th { color: var(--gold-dim); text-align:left; padding:.4rem .6rem; border-bottom:1px solid rgba(201,162,39,.2); }
+.role-table td { padding:.4rem .6rem; }
+.role-table tr:nth-child(even) td { background:rgba(255,255,255,.02); }
+
+/* ─── GAME PAGE ─── */
+#page-game { padding: 1rem; max-width: 1100px; margin: 0 auto; }
+
+/* ─── QUEST TRACKER ─── */
+.quest-tracker {
+  display: flex; align-items:center; justify-content:center;
+  gap: .5rem; margin: 1rem auto; flex-wrap:wrap;
+}
+.quest-pip {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items:center; justify-content:center;
+  font-size: 1.2rem; position:relative;
+  border: 2px solid rgba(201,162,39,.3);
+  background: rgba(255,255,255,.05);
+  transition: all .4s;
+}
+.quest-pip.current {
+  border-color: var(--gold);
+  box-shadow: var(--glow-gold);
+  animation: pulse 2s ease-in-out infinite;
+}
+.quest-pip.success { background: rgba(41,128,185,.3); border-color: var(--good-light); }
+.quest-pip.fail { background: rgba(192,57,43,.3); border-color: var(--evil-light); }
+.quest-pip-num { font-family:'Cinzel',serif; font-size:.7rem; color:var(--gold-dim); position:absolute; bottom:2px; right:6px; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 10px rgba(201,162,39,.4)} 50%{box-shadow:0 0 30px rgba(201,162,39,.8)} }
+
+/* ─── PHASE BANNER ─── */
+.phase-banner {
+  text-align: center; margin: 1rem 0;
+  padding: .8rem 1.5rem;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(201,162,39,.2);
+  border-radius: 4px;
+}
+.phase-title {
+  font-family: 'Cinzel', serif; font-size: 1.1rem;
+  color: var(--gold); letter-spacing: .15em;
+}
+.phase-desc { font-size: .85rem; color: var(--parchment-dark); margin-top: .3rem; }
+
+/* ─── PLAYER ROW ─── */
+.players-section { margin: 1rem 0; }
+.players-row {
+  display: flex; flex-wrap:wrap; gap: .6rem;
+  justify-content: center; padding: .5rem;
+}
+.player-card {
+  display: flex; flex-direction:column; align-items:center;
+  gap: .3rem; padding: .8rem 1rem; min-width: 90px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(201,162,39,.2); border-radius: 4px;
+  position: relative; cursor: default; transition: all .3s;
+  text-align: center;
+}
+.player-card.is-leader { border-color: var(--gold); box-shadow: 0 0 15px rgba(201,162,39,.2); }
+.player-card.in-team { border-color: var(--good-light); box-shadow: 0 0 15px rgba(41,128,185,.2); background:rgba(41,128,185,.08); }
+.player-card.selectable { cursor: pointer; }
+.player-card.selectable:hover { border-color: var(--gold-light); transform: translateY(-3px); box-shadow: var(--glow-gold); }
+.player-card.selected { border-color: var(--gold-light); background: rgba(201,162,39,.15); box-shadow: var(--glow-gold); }
+.player-card.evil-known { border-color: var(--evil-light); background: rgba(192,57,43,.08); }
+.player-card.merlin-seen { border-color: var(--good-light); background: rgba(41,128,185,.08); }
+.player-card.is-me { border-style: double; border-width: 3px; }
+.player-card.offline { opacity: .5; }
+
+.pc-avatar { font-size: 1.8rem; }
+.pc-name { font-size: .75rem; color: var(--parchment); max-width: 80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pc-role { font-size: .65rem; color: var(--gold-dim); }
+.pc-badge {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  font-size: .6rem; font-family:'Cinzel',serif; letter-spacing:.05em;
+  padding: 1px 6px; border-radius: 20px; white-space:nowrap;
+}
+.badge-leader { background: var(--gold); color: #1a0a00; }
+.badge-team { background: var(--good); color: white; }
+.badge-me { background: var(--royal-light); color: var(--gold); border: 1px solid var(--gold-dim); }
+.badge-evil { background: var(--crimson); color: var(--parchment); }
+.badge-merlin { background: var(--good); color: white; }
+
+/* ─── MY ROLE PANEL ─── */
+.my-role-panel {
+  margin: 1rem 0; padding: 1rem 1.5rem;
+  border-radius: 4px; position: relative; overflow: hidden;
+}
+.my-role-panel.good {
+  background: linear-gradient(135deg, rgba(29,78,137,.3), rgba(41,128,185,.15));
+  border: 1px solid rgba(41,128,185,.5);
+}
+.my-role-panel.evil {
+  background: linear-gradient(135deg, rgba(139,26,26,.4), rgba(192,57,43,.15));
+  border: 1px solid rgba(192,57,43,.5);
+}
+.my-role-inner { display:flex; align-items:center; gap:1.2rem; }
+.my-role-emoji { font-size: 3rem; filter: drop-shadow(0 0 10px currentColor); }
+.my-role-info h3 { font-family:'Cinzel',serif; font-size:1.1rem; color:var(--gold); }
+.my-role-info p { font-size:.8rem; color:var(--parchment-dark); margin-top:.3rem; line-height:1.6; }
+.team-badge-inline {
+  display:inline-block; padding:1px 8px; border-radius:20px;
+  font-size:.7rem; font-family:'Cinzel',serif; margin-top:.4rem;
+}
+.team-badge-inline.good { background:rgba(41,128,185,.3); color:var(--good-light); border:1px solid var(--good); }
+.team-badge-inline.evil { background:rgba(192,57,43,.3); color:var(--evil-light); border:1px solid var(--evil); }
+
+/* ─── INFO PANEL ─── */
+.info-panel {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(201,162,39,.15);
+  border-radius: 4px; padding: 1rem; margin: 1rem 0; font-size:.85rem;
+}
+.info-panel h4 { font-family:'Cinzel',serif; color:var(--gold); margin-bottom:.6rem; font-size:.85rem; letter-spacing:.1em; }
+.info-list { display:flex; flex-wrap:wrap; gap:.4rem; }
+.info-tag {
+  padding: .25rem .7rem; border-radius: 20px; font-size: .75rem;
+}
+.info-tag.evil { background:rgba(192,57,43,.2); border:1px solid var(--crimson); color:var(--evil-light); }
+.info-tag.suspect { background:rgba(41,128,185,.2); border:1px solid var(--good); color:var(--good-light); }
+
+/* ─── ACTION AREA ─── */
+.action-area {
+  margin: 1rem 0; padding: 1.2rem 1.5rem;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(201,162,39,.2);
+  border-radius: 4px;
+}
+.action-area h3 { font-family:'Cinzel',serif; color:var(--gold); margin-bottom:.8rem; font-size:.95rem; letter-spacing:.1em; }
+.action-row { display:flex; gap:.8rem; flex-wrap:wrap; align-items:center; }
+
+/* ─── VOTE DISPLAY ─── */
+.vote-progress { display:flex; align-items:center; gap:.6rem; font-size:.85rem; margin:.5rem 0; }
+.vote-bar { flex:1; height:6px; background:rgba(255,255,255,.1); border-radius:3px; overflow:hidden; }
+.vote-fill { height:100%; background:linear-gradient(90deg, var(--gold-dim), var(--gold)); transition:width .4s; }
+
+/* ─── MISSION CARDS ─── */
+.mission-result-cards { display:flex; gap:.6rem; flex-wrap:wrap; margin:.8rem 0; }
+.mission-card-display {
+  width: 50px; height: 70px; border-radius: 6px;
+  display:flex; align-items:center; justify-content:center;
+  font-size: 1.5rem; border: 2px solid;
+  animation: cardFlip .5s ease forwards;
+}
+.mission-card-display.success { background:rgba(41,128,185,.2); border-color:var(--good); }
+.mission-card-display.fail { background:rgba(192,57,43,.2); border-color:var(--evil); }
+@keyframes cardFlip { from{transform:rotateY(90deg);opacity:0} to{transform:none;opacity:1} }
+
+/* ─── REJECT COUNTER ─── */
+.reject-counter { display:flex; align-items:center; gap:.5rem; font-size:.8rem; color:var(--parchment-dark); }
+.reject-pip { width:12px;height:12px;border-radius:50%;border:1px solid var(--crimson); transition:.3s; }
+.reject-pip.filled { background:var(--crimson); box-shadow:0 0 6px var(--crimson); }
+
+/* ─── END SCREEN ─── */
+.end-overlay {
+  text-align:center; padding: 3rem 2rem;
+  max-width: 700px; margin: 0 auto;
+}
+.end-title {
+  font-family:'Cinzel Decorative',serif;
+  font-size: clamp(2rem,6vw,3.5rem);
+  font-weight:900; margin-bottom: 1rem;
+}
+.end-title.good { color:var(--gold); text-shadow:var(--glow-gold); }
+.end-title.evil { color:var(--evil-light); text-shadow:var(--glow-red); }
+.reveal-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:.8rem; margin:1.5rem 0; }
+.reveal-card {
+  padding:.8rem; border-radius:4px; text-align:center;
+  border: 1px solid rgba(201,162,39,.3); background:rgba(255,255,255,.05);
+}
+.reveal-card .rc-emoji { font-size:2rem; margin-bottom:.3rem; }
+.reveal-card .rc-name { font-size:.8rem; color:var(--parchment); }
+.reveal-card .rc-role { font-size:.7rem; color:var(--gold-dim); margin-top:.2rem; }
+.reveal-card.good-team { border-color:rgba(41,128,185,.5); }
+.reveal-card.evil-team { border-color:rgba(192,57,43,.5); }
+.reveal-card.assassinated { border-color:var(--crimson-light); box-shadow:var(--glow-red); }
+.reveal-card.merlin { border-color:var(--gold); box-shadow:var(--glow-gold); }
+
+/* ─── NOTIFICATIONS ─── */
+#notification-area { position:fixed; top:1rem; right:1rem; z-index:100; display:flex; flex-direction:column; gap:.5rem; max-width:350px; }
+.notification {
+  padding: .75rem 1.2rem; border-radius: 4px;
+  font-size: .85rem; line-height:1.4;
+  background: rgba(20,20,40,.95); backdrop-filter:blur(10px);
+  border-left: 3px solid var(--gold);
+  animation: slideIn .3s ease, fadeOut .3s ease 3.7s forwards;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+.notification.green { border-color: #27ae60; }
+.notification.red { border-color: var(--crimson-light); }
+.notification.orange { border-color: #e67e22; }
+.notification.purple { border-color: #8e44ad; }
+.notification.blue { border-color: var(--good); }
+.notification.gold { border-color: var(--gold); }
+.notification.cyan { border-color: #17a589; }
+.notification.gray { border-color: #5d6d7e; }
+@keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:none;opacity:1} }
+@keyframes fadeOut { to{opacity:0;transform:translateX(100%)} }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position:fixed; inset:0; z-index:50;
+  background:rgba(0,0,0,.7); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center;
+  animation: fadeIn .2s ease;
+}
+.modal-overlay.hidden { display:none; }
+.modal-box {
+  background: linear-gradient(135deg, #0f0f2a, #1a1a40);
+  border: 1px solid var(--gold-dim); border-radius: 6px;
+  padding: 2rem; max-width: 500px; width: 90%; position:relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,.8), var(--glow-gold);
+}
+.modal-title { font-family:'Cinzel',serif; color:var(--gold); font-size:1.2rem; margin-bottom:1.2rem; letter-spacing:.1em; }
+.modal-close {
+  position:absolute; top:.8rem; right:1rem; background:none; border:none;
+  color:var(--parchment-dark); font-size:1.3rem; cursor:pointer;
+}
+.modal-close:hover { color:var(--gold); }
+
+/* ─── INPUTS ─── */
+.input-group { display:flex; flex-direction:column; gap:.4rem; margin:.8rem 0; }
+.input-label { font-size:.8rem; color:var(--parchment-dark); font-family:'Cinzel',serif; letter-spacing:.05em; }
+.input-field {
+  background: rgba(255,255,255,.06); border: 1px solid var(--gold-dim);
+  color: var(--parchment); padding: .65rem 1rem; border-radius: 3px;
+  font-family: 'Noto Serif SC', serif; font-size: .9rem;
+  outline:none; transition:.3s;
+}
+.input-field:focus { border-color:var(--gold); box-shadow:0 0 0 2px rgba(201,162,39,.2); }
+.input-field::placeholder { color:rgba(245,230,200,.3); }
+
+/* ─── NAV ─── */
+.nav-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: .8rem 1.5rem; border-bottom: 1px solid rgba(201,162,39,.15);
+  background: rgba(5,5,20,.8); backdrop-filter:blur(10px);
+  position:sticky; top:0; z-index:20;
+}
+.nav-logo { font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:var(--gold); }
+.nav-info { font-size:.75rem; color:var(--parchment-dark); text-align:right; }
+
+/* ─── NIGHT SCREEN ─── */
+.night-screen {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height: 70vh; text-align:center; padding: 2rem;
+}
+.night-moon { font-size: 5rem; animation: float 3s ease-in-out infinite; margin-bottom:1rem; }
+.night-role-reveal {
+  background: linear-gradient(135deg, rgba(30,30,80,.8), rgba(50,20,60,.6));
+  border: 1px solid var(--gold-dim); border-radius: 8px;
+  padding: 2rem 3rem; margin: 1.5rem auto; max-width: 400px;
+  box-shadow: 0 0 40px rgba(100,60,150,.3);
+}
+.night-role-emoji { font-size: 4rem; margin-bottom: .8rem; }
+.night-role-name { font-family:'Cinzel Decorative',serif; font-size:1.6rem; color:var(--gold); margin-bottom:.5rem; }
+.night-role-team { font-size:.85rem; margin-bottom:1rem; }
+.night-role-desc { font-size:.85rem; color:var(--parchment-dark); line-height:1.8; text-align:left; }
+.night-secret-info {
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  border-radius:4px; padding: 1rem; margin:.8rem 0; text-align:left;
+}
+.night-secret-info h4 { font-family:'Cinzel',serif; font-size:.85rem; color:var(--gold); margin-bottom:.5rem; }
+.night-suspect-list { display:flex; flex-wrap:wrap; gap:.4rem; }
+.night-suspect-tag {
+  padding:.2rem .7rem; border-radius:20px; font-size:.8rem;
+}
+
+/* ─── UTILS ─── */
+.text-gold { color: var(--gold); }
+.text-good { color: var(--good-light); }
+.text-evil { color: var(--evil-light); }
+.text-dim { color: var(--parchment-dark); }
+.text-center { text-align: center; }
+.mt-1 { margin-top:.5rem; } .mt-2 { margin-top:1rem; } .mt-3 { margin-top:1.5rem; }
+.flex { display:flex; } .items-center { align-items:center; } .gap-1 { gap:.5rem; }
+.divider { height:1px; background:linear-gradient(90deg,transparent,rgba(201,162,39,.3),transparent); margin:1rem 0; }
+</style>
+</head>
+<body>
+<div class="bg-stars"></div>
+<div id="notification-area"></div>
+
+<!-- MODALS -->
+<div class="modal-overlay hidden" id="modal-join">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-join')">✕</button>
+    <div class="modal-title">⚔️ 加入游戏</div>
+    <div class="input-group">
+      <label class="input-label">您的名字</label>
+      <input class="input-field" id="join-name" maxlength="12" placeholder="骑士之名..." />
+    </div>
+    <div class="input-group">
+      <label class="input-label">房间代码</label>
+      <input class="input-field" id="join-code" maxlength="6" placeholder="XXXXX" style="text-transform:uppercase;letter-spacing:.3em;" />
+    </div>
+    <div class="mt-2">
+      <button class="btn btn-gold" style="width:100%" onclick="doJoinRoom()">进入阿瓦隆</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-create">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-create')">✕</button>
+    <div class="modal-title">🏰 创建房间</div>
+    <div class="input-group">
+      <label class="input-label">您的名字</label>
+      <input class="input-field" id="create-name" maxlength="12" placeholder="骑士之名..." />
+    </div>
+    <div class="mt-2">
+      <button class="btn btn-gold" style="width:100%" onclick="doCreateRoom()">建立圆桌</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <!-- HERO PAGE -->
+  <div id="page-hero" class="page active">
+    <div style="font-size:5rem;filter:drop-shadow(0 0 30px rgba(201,162,39,.6));animation:float 4s ease-in-out infinite;margin-bottom:1.5rem;">🏰</div>
+    <div class="title-main">AVALON</div>
+    <div class="title-sub">阿　瓦　隆</div>
+    <div class="hero-divider"></div>
+    <p class="hero-desc">骑士与叛徒的博弈，推理与欺骗的战场。<br>好人守护梅林，坏人潜伏其中。<br>光明与黑暗，在阿瓦隆的圆桌上决出胜负。</p>
+    <div class="hero-actions">
+      <button class="btn btn-gold" onclick="openModal('modal-create')">⚔️ 创建房间</button>
+      <button class="btn btn-outline" onclick="openModal('modal-join')">🛡️ 加入房间</button>
+    </div>
+    <div style="margin-top:3rem;font-size:.75rem;color:rgba(245,230,200,.3);letter-spacing:.1em;">5–10 人 · 约 30 分钟 · 阵营对抗</div>
+  </div>
+
+  <!-- LOBBY PAGE -->
+  <div id="page-lobby" class="page">
+    <div class="lobby-header">
+      <div class="title-main" style="font-size:2.5rem;">🏰 圆桌议事厅</div>
+      <div class="room-code-display">
+        <span class="text-dim" style="font-size:.8rem;letter-spacing:.05em;">房间代码</span>
+        <span class="room-code" id="lobby-room-code">XXXXX</span>
+        <button class="btn btn-sm btn-outline" onclick="copyRoomCode()">复制</button>
+      </div>
+      <div class="text-dim" style="font-size:.85rem;">分享房间代码邀请好友加入</div>
+    </div>
+
+    <div class="lobby-info">
+      <h3>⚔️ 等待玩家 (<span id="lobby-player-count">0</span>/10)</h3>
+      <div class="player-grid" id="lobby-player-grid"></div>
+      <div class="divider"></div>
+      <div id="lobby-actions" style="text-align:center">
+        <div class="text-dim" style="font-size:.85rem;margin-bottom:1rem;">等待房主开始游戏（需要至少5名玩家）</div>
+      </div>
+    </div>
+
+    <div class="lobby-info">
+      <h3>📜 角色配置</h3>
+      <table class="role-table">
+        <thead><tr><th>人数</th><th>好人</th><th>坏人</th></tr></thead>
+        <tbody>
+          <tr><td>5人</td><td>梅林·派西维尔·忠臣</td><td>莫甘娜·刺客</td></tr>
+          <tr><td>6人</td><td>梅林·派西维尔·忠臣×2</td><td>莫甘娜·刺客</td></tr>
+          <tr><td>7人</td><td>梅林·派西维尔·忠臣×2</td><td>莫德雷德·莫甘娜·刺客</td></tr>
+          <tr><td>8人</td><td>梅林·派西维尔·忠臣×3</td><td>莫德雷德·莫甘娜·刺客</td></tr>
+          <tr><td>9-10人</td><td>梅林·派西维尔·忠臣×4+</td><td>莫德雷德·莫甘娜·刺客·爪牙</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GAME PAGE -->
+  <div id="page-game" class="page">
+    <div class="nav-bar">
+      <div class="nav-logo">⚔️ AVALON</div>
+      <div class="nav-info">
+        房间：<span id="game-room-code" class="text-gold"></span><br>
+        <span id="nav-player-count" class="text-dim"></span>
+      </div>
+      <div id="nav-host-controls" style="display:none">
+        <button class="btn btn-outline btn-sm" onclick="confirmForceReset()" title="游戏卡住时强制回到大厅" style="border-color:var(--crimson);color:#e07070;font-size:.7rem;padding:.3rem .7rem">
+          🔄 强制重置
+        </button>
+      </div>
+    </div>
+
+    <div id="game-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let ws = null;
+let playerId = localStorage.getItem('avalon_player_id') || generateId();
+let playerName = '';
+let roomId = '';
+let gameState = null;
+let selectedTeam = [];
+let missionResultShown = false;
+
+localStorage.setItem('avalon_player_id', playerId);
+
+function generateId() {
+  return 'p_' + Math.random().toString(36).slice(2, 10);
+}
+
+const ROLE_DESC = {
+  merlin:   '您知道所有坏人是谁（莫德雷德除外）。请隐藏身份，若胜利后被刺杀则好人失败。',
+  percival: '您看到了梅林和莫甘娜，但不知道谁是谁，请自行推断。',
+  loyal:    '您是亚瑟的忠实骑士，没有特殊能力，依靠推理辨别真伪。',
+  mordred:  '您的身份对梅林不可见。带领坏人阻止任务，最终逆转胜利！',
+  morgana:  '您在派西维尔眼中与梅林相同，迷惑派西维尔！',
+  assassin: '好人获胜后，您有机会刺杀梅林来逆转局面！',
+  minion:   '莫德雷德的爪牙，帮助坏人阻止任务。',
+};
+
+// ═══════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.add('hidden'); }));
+
+// ═══════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════
+function showNotify(message, color='white') {
+  const area = document.getElementById('notification-area');
+  const n = document.createElement('div');
+  n.className = `notification ${color}`;
+  n.textContent = message;
+  area.appendChild(n);
+  setTimeout(() => n.remove(), 4200);
+}
+
+// ═══════════════════════════════════════════
+//  ROOM CREATE / JOIN
+// ═══════════════════════════════════════════
+async function doCreateRoom() {
+  const name = document.getElementById('create-name').value.trim();
+  if (!name) return alert('请输入名字');
+  playerName = name;
+  const resp = await fetch('/api/room', { method: 'POST' });
+  const data = await resp.json();
+  roomId = data.room_id;
+  closeModal('modal-create');
+  connectWS();
+}
+
+async function doJoinRoom() {
+  const name = document.getElementById('join-name').value.trim();
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (!name) return alert('请输入名字');
+  if (!code) return alert('请输入房间代码');
+  playerName = name;
+  roomId = code;
+  closeModal('modal-join');
+  connectWS();
+}
+
+function copyRoomCode() {
+  navigator.clipboard.writeText(roomId).then(() => showNotify('房间代码已复制！', 'gold'));
+}
+
+// ═══════════════════════════════════════════
+//  WEBSOCKET
+// ═══════════════════════════════════════════
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const url = `${proto}://${location.host}/ws/${roomId}?player_id=${encodeURIComponent(playerId)}&name=${encodeURIComponent(playerName)}`;
+  ws = new WebSocket(url);
+
+  ws.onopen = () => showNotify('已连接到服务器', 'green');
+  ws.onmessage = e => handleMessage(JSON.parse(e.data));
+  ws.onclose = () => {
+    showNotify('与服务器断开连接', 'red');
+    setTimeout(connectWS, 3000);
+  };
+  ws.onerror = () => showNotify('连接错误', 'red');
+}
+
+function send(msg) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+}
+
+// ═══════════════════════════════════════════
+//  MESSAGE HANDLER
+// ═══════════════════════════════════════════
+function handleMessage(msg) {
+  if (msg.type === 'error') {
+    showNotify('❌ ' + msg.message, 'red');
+    return;
+  }
+  if (msg.type === 'notify') {
+    showNotify(msg.message, msg.color || 'white');
+    return;
+  }
+  if (msg.type === 'state') {
+    gameState = msg.data;
+    missionResultShown = false;
+    renderGame();
+    return;
+  }
+  if (msg.type === 'vote_progress') {
+    updateVoteProgress(msg.count, msg.total);
+    return;
+  }
+  if (msg.type === 'mission_progress') {
+    updateMissionProgress(msg.count, msg.total);
+    return;
+  }
+  if (msg.type === 'mission_result') {
+    showMissionResult(msg.cards, msg.success, msg.round);
+    return;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════
+function renderGame() {
+  if (!gameState) return;
+  const s = gameState;
+
+  // 显示/隐藏房主强制重置按钮
+  const hostCtrl = document.getElementById('nav-host-controls');
+  if (hostCtrl) hostCtrl.style.display = (s.my_id === s.host_id && s.phase !== 'lobby') ? 'block' : 'none';
+
+  if (s.phase === 'lobby') {
+    showPage('page-lobby');
+    renderLobby(s);
+    return;
+  }
+
+  showPage('page-game');
+  document.getElementById('game-room-code').textContent = s.room_id;
+  document.getElementById('nav-player-count').textContent = `${s.players.filter(p=>p.online).length}/${s.total_players} 在线`;
+
+  if (s.phase === 'night') {
+    renderNight(s);
+  } else if (s.phase === 'end') {
+    renderEnd(s);
+  } else {
+    renderMain(s);
+  }
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── LOBBY ───
+function renderLobby(s) {
+  document.getElementById('lobby-room-code').textContent = s.room_id;
+  document.getElementById('lobby-player-count').textContent = s.players.length;
+
+  const grid = document.getElementById('lobby-player-grid');
+  const avatars = ['🧙','⚔️','🛡️','🏹','🗡️','🔮','👑','🦅','🐺','🔱'];
+  grid.innerHTML = s.players.map((p,i) => `
+    <div class="player-slot ${p.id===s.my_id?'me':''}  filled">
+      <div class="player-avatar">${avatars[i%avatars.length]}</div>
+      <div class="player-name">${escHtml(p.name)}</div>
+      ${p.id===s.host_id ? '<div class="player-host-badge">♔ 房主</div>' : ''}
+      ${p.id===s.my_id ? '<div class="player-host-badge" style="color:var(--good-light)">• 您</div>' : ''}
+    </div>
+  `).join('');
+
+  const actions = document.getElementById('lobby-actions');
+  if (s.my_id === s.host_id) {
+    const canStart = s.players.length >= 5;
+    actions.innerHTML = `
+      <button class="btn btn-gold" ${canStart?'':'disabled'} onclick="send({action:'start_game'})">
+        ${canStart ? '⚔️ 开始游戏' : `⚔️ 等待玩家 (${s.players.length}/5)`}
+      </button>
+    `;
+  } else {
+    actions.innerHTML = `<div class="text-dim" style="font-size:.85rem;">等待房主开始游戏（${s.players.length}名玩家已就绪）</div>`;
+  }
+}
+
+// ─── NIGHT ───
+function renderNight(s) {
+  const role = s.my_role;
+  const roleInfo = { merlin:'👑',percival:'🛡️',loyal:'⚔️',mordred:'🗡️',morgana:'🔮',assassin:'🎯',minion:'💀' };
+  const roleNames = { merlin:'梅林',percival:'派西维尔',loyal:'亚瑟忠臣',mordred:'莫德雷德',morgana:'莫甘娜',assassin:'刺客',minion:'莫德雷德爪牙' };
+
+  const isEvil = s.my_team === 'evil';
+
+  // Build secret info section
+  let secretHtml = '';
+
+  if (role === 'merlin' && s.visible_evil_to_merlin.length > 0) {
+    const evilNames = s.visible_evil_to_merlin.map(id => {
+      const p = s.players.find(x=>x.id===id);
+      return p ? `<span class="night-suspect-tag" style="background:rgba(192,57,43,.2);border:1px solid var(--crimson);color:var(--evil-light)">🗡️ ${escHtml(p.name)}</span>` : '';
+    }).join('');
+    secretHtml = `<div class="night-secret-info"><h4>🔍 您看到的坏人（莫德雷德不可见）：</h4><div class="night-suspect-list">${evilNames}</div></div>`;
+  }
+
+  if (role === 'percival' && s.visible_to_percival.length > 0) {
+    const names = s.visible_to_percival.map(id => {
+      const p = s.players.find(x=>x.id===id);
+      return p ? `<span class="night-suspect-tag" style="background:rgba(41,128,185,.2);border:1px solid var(--good);color:var(--good-light)">✨ ${escHtml(p.name)}</span>` : '';
+    }).join('');
+    secretHtml = `<div class="night-secret-info"><h4>👁️ 您看到的梅林/莫甘娜（顺序随机）：</h4><div class="night-suspect-list">${names}</div><div style="font-size:.75rem;color:var(--parchment-dark);margin-top:.4rem">⚠️ 两者顺序随机显示，无法据此判断谁是梅林</div></div>`;
+  }
+
+  if (isEvil) {
+    const evilPlayers = s.players.filter(p => p.team === 'evil' && p.id !== s.my_id);
+    if (evilPlayers.length > 0) {
+      const names = evilPlayers.map(p => `<span class="night-suspect-tag" style="background:rgba(192,57,43,.2);border:1px solid var(--crimson);color:var(--evil-light)">💀 ${escHtml(p.name)} (${p.role_name||'坏人'})</span>`).join('');
+      secretHtml += `<div class="night-secret-info"><h4>👥 您的坏人同伴：</h4><div class="night-suspect-list">${names}</div></div>`;
+    }
+  }
+
+  const acked = s.players.filter(p=>p.online).length; // approximate
+
+  document.getElementById('game-content').innerHTML = `
+    <div class="night-screen">
+      <div class="night-moon">🌙</div>
+      <div class="night-role-reveal">
+        <div class="night-role-emoji">${roleInfo[role]||'❓'}</div>
+        <div class="night-role-name">${roleNames[role]||role}</div>
+        <div class="night-role-team">
+          <span class="team-badge-inline ${s.my_team}">${isEvil?'⚡ 邪恶阵营':'✨ 正义阵营'}</span>
+        </div>
+        <div class="night-role-desc">${ROLE_DESC[role]||''}</div>
+        ${secretHtml}
+      </div>
+      <button class="btn btn-gold mt-2" onclick="ackNight()">⚔️ 我已了解，准备好了！</button>
+      <div class="text-dim mt-1" style="font-size:.75rem">等待其他玩家确认...</div>
+    </div>
+  `;
+}
+
+function ackNight() { send({ action: 'night_ack' }); }
+
+// ─── MAIN GAME ───
+function renderMain(s) {
+  const me = s.players.find(p => p.id === s.my_id);
+  if (!me) return;
+
+  // Quest tracker
+  const questSizes = getQuestSizes(s.total_players);
+  const trackerHtml = questSizes.map((size, i) => {
+    let cls = '';
+    let icon = size;
+    if (i < s.quest_results.length) {
+      cls = s.quest_results[i] ? 'success' : 'fail';
+      icon = s.quest_results[i] ? '✅' : '❌';
+    } else if (i === s.round && s.phase !== 'end') {
+      cls = 'current';
+    }
+    return `<div class="quest-pip ${cls}" title="第${i+1}轮：${size}人">${icon}<span class="quest-pip-num">${size}</span></div>`;
+  }).join('<div style="width:20px;height:2px;background:rgba(201,162,39,.3);margin-top:27px"></div>');
+
+  // Reject pips
+  const rejectPips = [0,1,2].map(i => `<div class="reject-pip ${i<s.vote_reject_count?'filled':''}"></div>`).join('');
+
+  // Phase banner
+  const phaseInfo = getPhaseInfo(s);
+
+  // Players
+  const playersHtml = renderPlayers(s);
+
+  // My role panel
+  const myRoleHtml = renderMyRole(me, s);
+
+  // Info panels (secret knowledge)
+  const infoHtml = renderSecretInfo(s);
+
+  // Action area
+  const actionHtml = renderActions(s, me);
+
+  document.getElementById('game-content').innerHTML = `
+    <div style="padding:.5rem 0">
+      <div class="quest-tracker">${trackerHtml}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:.3rem 0">
+        <div class="reject-counter">连续拒绝：${rejectPips}</div>
+        <div class="text-dim" style="font-size:.75rem">第${s.round+1}/5轮 · 每轮需${s.quest_size}人</div>
+      </div>
+      <div class="phase-banner">
+        <div class="phase-title">${phaseInfo.title}</div>
+        <div class="phase-desc">${phaseInfo.desc}</div>
+      </div>
+      ${myRoleHtml}
+      ${infoHtml}
+      <div class="players-section">
+        <div style="font-size:.8rem;color:var(--gold-dim);text-align:center;margin-bottom:.5rem;font-family:'Cinzel',serif;letter-spacing:.1em">圆 桌 骑 士</div>
+        <div class="players-row" id="players-row">${playersHtml}</div>
+      </div>
+      ${actionHtml}
+    </div>
+  `;
+
+  // Attach selection events
+  if (s.phase === 'quest' && s.leader_id === s.my_id) {
+    document.querySelectorAll('.player-card.selectable').forEach(card => {
+      card.addEventListener('click', () => toggleTeamSelect(card.dataset.pid, s.quest_size));
+    });
+  }
+  if (s.phase === 'assassinate' && s.my_team === 'evil') {
+    document.querySelectorAll('.player-card.selectable').forEach(card => {
+      card.addEventListener('click', () => selectAssassinTarget(card.dataset.pid));
+    });
+  }
+}
+
+function getPhaseInfo(s) {
+  const leader = s.players.find(p=>p.id===s.leader_id);
+  const lname = leader ? leader.name : '?';
+  switch(s.phase) {
+    case 'quest': return {
+      title: `👑 领袖 ${lname} 正在组建队伍`,
+      desc: s.leader_id === s.my_id ? `请从下方选择 ${s.quest_size} 名队员` : `等待 ${lname} 选择队伍成员 (${s.quest_size}人)`
+    };
+    case 'vote': return {
+      title: '🗳️ 投票表决',
+      desc: s.voted ? '您已投票，等待所有人...' : '请投票：赞成或反对本次队伍提案'
+    };
+    case 'execute': return {
+      title: '⚔️ 执行任务',
+      desc: s.team.includes(s.my_id)
+        ? (s.mission_played ? '您已提交任务牌，等待其他队员...' : '请秘密提交任务牌')
+        : '等待任务队员提交任务牌...'
+    };
+    case 'assassinate': return {
+      title: '🎯 刺杀阶段',
+      desc: s.my_team === 'evil' ? '坏人商议后，刺客选择刺杀目标' : '❗ 坏人正在商议刺杀目标，梅林请镇定！'
+    };
+    default: return { title: '', desc: '' };
+  }
+}
+
+function renderPlayers(s) {
+  const isLeaderSelectingTeam = s.phase === 'quest' && s.leader_id === s.my_id;
+  const isAssassinating = s.phase === 'assassinate' && s.my_team === 'evil';
+
+  return s.players.map(p => {
+    const badges = [];
+    let extraClass = '';
+    let extraStyle = '';
+
+    if (p.id === s.my_id) badges.push('<span class="pc-badge badge-me">我</span>');
+    if (p.is_leader && s.phase !== 'lobby') badges.push('<span class="pc-badge badge-leader" style="top:-8px">♔领袖</span>');
+    if (p.in_team) badges.push('<span class="pc-badge badge-team" style="top:-8px">队员</span>');
+
+    // Merlin's view: mark evil
+    if (s.my_role === 'merlin' && s.visible_evil_to_merlin?.includes(p.id)) {
+      extraClass += ' evil-known';
+      badges.push('<span class="pc-badge badge-evil" style="bottom:-8px;top:auto">坏人</span>');
+    }
+    // Percival's view
+    if (s.my_role === 'percival' && s.visible_to_percival?.includes(p.id)) {
+      extraClass += ' merlin-seen';
+      badges.push('<span class="pc-badge badge-merlin" style="bottom:-8px;top:auto">✨</span>');
+    }
+    // Evil sees evil teammates
+    if (s.my_team === 'evil' && p.team === 'evil' && p.id !== s.my_id) {
+      extraClass += ' evil-known';
+    }
+
+    if (p.id === s.my_id) extraClass += ' is-me';
+    if (!p.online) extraClass += ' offline';
+    if (p.is_leader) extraClass += ' is-leader';
+    if (p.in_team && !p.is_leader) extraClass += ' in-team';
+
+    let selectable = false;
+    if (isLeaderSelectingTeam && p.id !== s.my_id || isLeaderSelectingTeam) {
+      selectable = true;
+      extraClass += ' selectable';
+      if (selectedTeam.includes(p.id)) extraClass += ' selected';
+    }
+    if (isAssassinating && s.my_team === 'evil') {
+      selectable = true;
+      extraClass += ' selectable';
+    }
+
+    const avatar = getAvatar(p, s);
+    const roleLine = p.role_name ? `<div class="pc-role">${p.role_emoji||''} ${p.role_name}</div>` : '';
+
+    return `
+      <div class="player-card${extraClass}" data-pid="${p.id}" ${selectable?'':'style="cursor:default"'}>
+        ${badges.join('')}
+        <div class="pc-avatar">${avatar}</div>
+        <div class="pc-name">${escHtml(p.name)}</div>
+        ${roleLine}
+        ${!p.online ? '<div style="font-size:.65rem;color:var(--parchment-dark)">离线</div>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function getAvatar(p, s) {
+  const avatars = ['🧙','⚔️','🛡️','🏹','🗡️','🔮','👑','🦅','🐺','🔱'];
+  const idx = s.players.findIndex(x=>x.id===p.id);
+  if (p.role_emoji) return p.role_emoji;
+  if (s.my_team === 'evil' && p.team === 'evil') {
+    return '💀';
+  }
+  return avatars[idx % avatars.length];
+}
+
+function renderMyRole(me, s) {
+  if (!me.role) return '';
+  const team = s.my_team;
+  const roleNames = {merlin:'梅林',percival:'派西维尔',loyal:'亚瑟忠臣',mordred:'莫德雷德',morgana:'莫甘娜',assassin:'刺客',minion:'莫德雷德爪牙'};
+  const roleEmojis = {merlin:'👑',percival:'🛡️',loyal:'⚔️',mordred:'🗡️',morgana:'🔮',assassin:'🎯',minion:'💀'};
+  return `
+    <div class="my-role-panel ${team}">
+      <div class="my-role-inner">
+        <div class="my-role-emoji">${roleEmojis[me.role]||'❓'}</div>
+        <div class="my-role-info">
+          <h3>${roleNames[me.role]||me.role}</h3>
+          <div><span class="team-badge-inline ${team}">${team==='evil'?'⚡ 邪恶阵营':'✨ 正义阵营'}</span></div>
+          <p>${ROLE_DESC[me.role]||''}</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSecretInfo(s) {
+  let html = '';
+  if (s.my_role === 'merlin' && s.visible_evil_to_merlin?.length > 0) {
+    const tags = s.visible_evil_to_merlin.map(id => {
+      const p = s.players.find(x=>x.id===id);
+      return p ? `<span class="info-tag evil">🗡️ ${escHtml(p.name)}</span>` : '';
+    }).join('');
+    html += `<div class="info-panel"><h4>🔍 梅林视角：已知坏人（莫德雷德不可见）</h4><div class="info-list">${tags}</div></div>`;
+  }
+  if (s.my_role === 'percival' && s.visible_to_percival?.length > 0) {
+    const tags = s.visible_to_percival.map(id => {
+      const p = s.players.find(x=>x.id===id);
+      return p ? `<span class="info-tag suspect">✨ ${escHtml(p.name)}</span>` : '';
+    }).join('');
+    html += `<div class="info-panel"><h4>👁️ 派西维尔视角：梅林/莫甘娜之一（顺序随机）</h4><div class="info-list">${tags}</div><div style="font-size:.75rem;color:var(--parchment-dark);margin-top:.4rem">⚠️ 顺序随机，不代表角色顺序</div></div>`;
+  }
+  if (s.my_team === 'evil') {
+    const evilPlayers = s.players.filter(p => p.team === 'evil' && p.id !== s.my_id);
+    if (evilPlayers.length > 0) {
+      const tags = evilPlayers.map(p => `<span class="info-tag evil">💀 ${escHtml(p.name)} (${p.role_name||'坏人'})</span>`).join('');
+      html += `<div class="info-panel"><h4>👥 坏人视角：您的同伴</h4><div class="info-list">${tags}</div></div>`;
+    }
+  }
+  return html;
+}
+
+function renderActions(s, me) {
+  let html = '';
+
+  if (s.phase === 'quest' && s.leader_id === s.my_id) {
+    const selected = selectedTeam.length;
+    const need = s.quest_size;
+    html = `
+      <div class="action-area">
+        <h3>👑 组建队伍 (已选 ${selected}/${need})</h3>
+        <div class="action-row">
+          <button class="btn btn-gold" onclick="submitTeam()" ${selected===need?'':'disabled'}>提交队伍</button>
+          <button class="btn btn-outline btn-sm" onclick="clearTeam()">清空选择</button>
+        </div>
+      </div>
+    `;
+  } else if (s.phase === 'vote' && !s.voted) {
+    html = `
+      <div class="action-area">
+        <h3>🗳️ 您的投票</h3>
+        <div class="vote-progress">
+          <span style="font-size:.8rem;color:var(--parchment-dark)">投票进度</span>
+          <div class="vote-bar"><div class="vote-fill" id="vote-fill-bar" style="width:${s.vote_tally/s.total_players*100}%"></div></div>
+          <span style="font-size:.8rem" id="vote-count-text">${s.vote_tally}/${s.total_players}</span>
+        </div>
+        <div class="action-row">
+          <button class="btn btn-gold" onclick="castVote(true)">✅ 赞成</button>
+          <button class="btn btn-danger" onclick="castVote(false)">❌ 反对</button>
+        </div>
+      </div>
+    `;
+  } else if (s.phase === 'vote' && s.voted) {
+    html = `
+      <div class="action-area">
+        <h3>🗳️ 等待投票结果</h3>
+        <div class="vote-progress">
+          <div class="vote-bar"><div class="vote-fill" id="vote-fill-bar" style="width:${s.vote_tally/s.total_players*100}%"></div></div>
+          <span style="font-size:.8rem" id="vote-count-text">${s.vote_tally}/${s.total_players}</span>
+        </div>
+        <div class="text-dim" style="font-size:.85rem">您已投票，等待其他人...</div>
+      </div>
+    `;
+  } else if (s.phase === 'execute') {
+    const inTeam = s.team.includes(s.my_id);
+    if (inTeam && !s.mission_played) {
+      const isEvil = s.my_team === 'evil';
+      html = `
+        <div class="action-area">
+          <h3>⚔️ 提交任务牌</h3>
+          <div class="mission-progress" style="font-size:.85rem;color:var(--parchment-dark);margin-bottom:.6rem" id="mission-progress-text">已提交 ${s.mission_tally}/${s.team.length}</div>
+          <div class="action-row">
+            <button class="btn btn-gold" onclick="playMission(true)">✅ 任务成功</button>
+            ${isEvil ? '<button class="btn btn-danger" onclick="playMission(false)">❌ 任务失败</button>' : '<button class="btn btn-outline btn-sm" disabled title="好人只能出成功">（好人只能出成功）</button>'}
+          </div>
+        </div>
+      `;
+    } else if (inTeam) {
+      html = `<div class="action-area"><h3>⚔️ 已提交任务牌</h3><div class="mission-progress" id="mission-progress-text" style="font-size:.85rem;color:var(--parchment-dark)">等待其他队员... (${s.mission_tally}/${s.team.length})</div></div>`;
+    } else {
+      html = `<div class="action-area"><h3>⚔️ 等待任务结果</h3><div class="text-dim" style="font-size:.85rem">您未在此轮队伍中，等待任务队员提交牌... (${s.mission_tally}/${s.team.length})</div></div>`;
+    }
+  } else if (s.phase === 'assassinate') {
+    if (s.my_team === 'evil') {
+      html = `
+        <div class="action-area">
+          <h3>🎯 刺杀梅林</h3>
+          <p class="text-dim" style="font-size:.85rem;margin-bottom:.8rem">选择您认为是梅林的玩家，由刺客决定刺杀</p>
+          <div id="assassin-target-display" style="margin-bottom:.8rem;font-size:.85rem;color:var(--gold)"></div>
+          <button class="btn btn-danger" id="btn-assassinate" disabled onclick="confirmAssassinate()">🎯 确认刺杀</button>
+        </div>
+      `;
+    } else {
+      html = `<div class="action-area"><h3>🎯 刺杀阶段进行中...</h3><div class="text-dim" style="font-size:.85rem">坏人正在商议，梅林请镇定！</div></div>`;
+    }
+  }
+
+  return html;
+}
+
+// ─── END ───
+function renderEnd(s) {
+  const good = s.winner === 'good';
+  const icon = good ? '🌟' : '💀';
+  const msg = good ? '正义阵营 · 胜利！' : '邪恶阵营 · 胜利！';
+
+  const revealCards = s.players.map(p => {
+    const roleNames = {merlin:'梅林',percival:'派西维尔',loyal:'忠臣',mordred:'莫德雷德',morgana:'莫甘娜',assassin:'刺客',minion:'爪牙'};
+    const roleEmojis = {merlin:'👑',percival:'🛡️',loyal:'⚔️',mordred:'🗡️',morgana:'🔮',assassin:'🎯',minion:'💀'};
+    const isAssassinated = p.id === s.assassin_target;
+    const isMerlin = p.role === 'merlin';
+    let cls = p.team === 'evil' ? 'evil-team' : 'good-team';
+    if (isMerlin) cls += ' merlin';
+    if (isAssassinated) cls += ' assassinated';
+    return `
+      <div class="reveal-card ${cls}">
+        <div class="rc-emoji">${roleEmojis[p.role]||'❓'}${isAssassinated?'🎯':''}</div>
+        <div class="rc-name">${escHtml(p.name)}${p.id===s.my_id?' (我)':''}</div>
+        <div class="rc-role">${roleNames[p.role]||p.role||'?'}</div>
+        <div style="font-size:.65rem;margin-top:.2rem;color:${p.team==='evil'?'var(--evil-light)':'var(--good-light)'}">${p.team==='evil'?'邪恶':'正义'}</div>
+      </div>
+    `;
+  }).join('');
+
+  const assassinMsg = s.assassin_target ? (() => {
+    const t = s.players.find(p=>p.id===s.assassin_target);
+    return t ? `刺客刺杀了 ${t.name}${t.role==='merlin' ? ' ——正是梅林！逆转！' : ' ——但TA不是梅林！'}` : '';
+  })() : '';
+
+  document.getElementById('game-content').innerHTML = `
+    <div class="end-overlay">
+      <div style="font-size:4rem;margin-bottom:1rem;animation:float 3s infinite">${icon}</div>
+      <div class="end-title ${good?'good':'evil'}">${msg}</div>
+      ${assassinMsg ? `<div class="text-dim" style="margin:.8rem 0;font-size:.9rem">${assassinMsg}</div>` : ''}
+      <div style="font-family:'Cinzel',serif;color:var(--gold);letter-spacing:.1em;margin:1rem 0;font-size:.9rem">— 角色揭示 —</div>
+      <div class="reveal-grid">${revealCards}</div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1rem">
+        ${s.my_id === s.host_id ? `<button class="btn btn-gold" onclick="send({action:'restart'})">🔄 再来一局</button>` : '<div class="text-dim">等待房主重新开始...</div>'}
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════════════════
+let assassinTarget = null;
+
+function toggleTeamSelect(pid, need) {
+  const idx = selectedTeam.indexOf(pid);
+  if (idx === -1) {
+    if (selectedTeam.length >= need) {
+      showNotify(`最多选择${need}人`, 'orange');
+      return;
+    }
+    selectedTeam.push(pid);
+  } else {
+    selectedTeam.splice(idx, 1);
+  }
+  // Re-render players
+  const s = gameState;
+  document.getElementById('players-row').innerHTML = renderPlayers(s);
+  document.querySelectorAll('.player-card.selectable').forEach(card => {
+    card.addEventListener('click', () => toggleTeamSelect(card.dataset.pid, s.quest_size));
+  });
+  // Update button
+  const btn = document.querySelector('.action-area .btn-gold');
+  if (btn) {
+    btn.textContent = `提交队伍`;
+    btn.disabled = selectedTeam.length !== need;
+    btn.previousElementSibling && (btn.parentElement.querySelector('h3').textContent = `👑 组建队伍 (已选 ${selectedTeam.length}/${need})`);
+  }
+  const h3 = document.querySelector('.action-area h3');
+  if (h3) h3.textContent = `👑 组建队伍 (已选 ${selectedTeam.length}/${need})`;
+}
+
+function clearTeam() { selectedTeam = []; renderMain(gameState); }
+
+function submitTeam() {
+  if (!gameState || selectedTeam.length !== gameState.quest_size) return;
+  send({ action: 'select_team', team: [...selectedTeam] });
+  selectedTeam = [];
+}
+
+function castVote(approve) {
+  send({ action: 'vote', approve });
+}
+
+function playMission(success) {
+  send({ action: 'mission_card', success });
+}
+
+function selectAssassinTarget(pid) {
+  assassinTarget = pid;
+  const p = gameState.players.find(x=>x.id===pid);
+  const display = document.getElementById('assassin-target-display');
+  if (display && p) display.textContent = `已选择目标：${p.name}`;
+  const btn = document.getElementById('btn-assassinate');
+  if (btn) btn.disabled = false;
+}
+
+function confirmAssassinate() {
+  if (!assassinTarget) return;
+  send({ action: 'assassinate', target: assassinTarget });
+  assassinTarget = null;
+}
+
+// ═══════════════════════════════════════════
+//  LIVE UPDATES
+// ═══════════════════════════════════════════
+function updateVoteProgress(count, total) {
+  const bar = document.getElementById('vote-fill-bar');
+  const txt = document.getElementById('vote-count-text');
+  if (bar) bar.style.width = `${count/total*100}%`;
+  if (txt) txt.textContent = `${count}/${total}`;
+}
+
+function updateMissionProgress(count, total) {
+  const el = document.getElementById('mission-progress-text');
+  if (el) el.textContent = `已提交 ${count}/${total}`;
+}
+
+function showMissionResult(cards, success, round) {
+  if (missionResultShown) return;
+  missionResultShown = true;
+  const cardsHtml = cards.map((c,i) => `
+    <div class="mission-card-display ${c?'success':'fail'}" style="animation-delay:${i*.15}s">
+      ${c?'✅':'❌'}
+    </div>
+  `).join('');
+  // Inject result into action area
+  const action = document.querySelector('.action-area');
+  if (action) {
+    action.innerHTML = `
+      <h3>⚔️ 第${round+1}轮任务结果</h3>
+      <div class="mission-result-cards">${cardsHtml}</div>
+      <div class="${success?'text-good':'text-evil'}" style="font-size:1.1rem;font-family:'Cinzel',serif;margin-top:.5rem">
+        ${success ? '✅ 任务成功！' : '❌ 任务失败！'}
+      </div>
+    `;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+function getQuestSizes(n) {
+  const map = {
+    5: [2,3,2,3,3], 6: [2,3,4,3,4],
+    7: [2,3,3,4,4], 8: [3,4,4,5,5],
+    9: [3,4,4,5,5], 10: [3,4,4,5,5],
+  };
+  return map[n] || map[7];
+}
+
+function confirmForceReset() {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;
+    display:flex;align-items:center;justify-content:center;
+  `;
+  modal.innerHTML = `
+    <div style="background:#1a1a3a;border:1px solid var(--crimson);border-radius:8px;padding:2rem;max-width:340px;text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem">⚠️</div>
+      <h3 style="font-family:'Cinzel',serif;color:var(--gold);margin-bottom:.8rem">强制重置游戏</h3>
+      <p style="color:var(--parchment-dark);font-size:.9rem;line-height:1.6;margin-bottom:1.2rem">
+        这将把游戏强制回到大厅，<br>
+        所有玩家保留但角色清空。<br>
+        <span style="color:#e07070">游戏进度将全部丢失！</span>
+      </p>
+      <div style="display:flex;gap:.8rem;justify-content:center">
+        <button onclick="this.closest('div[style]').remove()" class="btn btn-outline btn-sm">取消</button>
+        <button onclick="doForceReset(this)" class="btn btn-danger btn-sm">确认重置</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+function doForceReset(btn) {
+  btn.closest('div[style]').remove();
+  send({ action: 'force_reset' });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
