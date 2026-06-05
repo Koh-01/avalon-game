@@ -471,6 +471,7 @@ body {
 <div class="bg-stars"></div>
 <div id="notification-area"></div>
 
+<!-- MODALS -->
 <div class="modal-overlay hidden" id="modal-join">
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal('modal-join')">✕</button>
@@ -504,6 +505,7 @@ body {
 </div>
 
 <div id="app">
+  <!-- HERO PAGE -->
   <div id="page-hero" class="page active">
     <div style="font-size:5rem;filter:drop-shadow(0 0 30px rgba(201,162,39,.6));animation:float 4s ease-in-out infinite;margin-bottom:1.5rem;">🏰</div>
     <div class="title-main">AVALON</div>
@@ -517,6 +519,7 @@ body {
     <div style="margin-top:3rem;font-size:.75rem;color:rgba(245,230,200,.3);letter-spacing:.1em;">5–10 人 · 约 30 分钟 · 阵营对抗</div>
   </div>
 
+  <!-- LOBBY PAGE -->
   <div id="page-lobby" class="page">
     <div class="lobby-header">
       <div class="title-main" style="font-size:2.5rem;">🏰 圆桌议事厅</div>
@@ -557,6 +560,7 @@ body {
     </div>
   </div>
 
+  <!-- GAME PAGE -->
   <div id="page-game" class="page">
     <div class="nav-bar">
       <div class="nav-logo">⚔️ AVALON</div>
@@ -823,7 +827,7 @@ function renderLobby(s) {
   document.getElementById('lobby-room-code').textContent = s.room_id;
   document.getElementById('lobby-player-count').textContent = s.players.length;
   const grid = document.getElementById('lobby-player-grid');
-  const avatars = ['🛡️','🛡️','🛡️','🛡️','🛡️','🛡️','🛡️','🛡️','🛡️','🛡️'];
+  const avatars = ['🧙','⚔️','🛡️','🏹','🗡️','🔮','👑','🦅','🐺','🔱'];
   grid.innerHTML = s.players.map((p,i) => `
     <div class="player-slot ${p.id===s.my_id?'me':''}  filled">
       <div class="player-avatar">${avatars[i%avatars.length]}</div>
@@ -1031,6 +1035,15 @@ function renderSecretInfo(s) {
       html += `<div class="info-panel"><h4>👥 坏人视角：您的同伴</h4><div class="info-list">${tags}</div></div>`;
     }
   }
+  
+  // ★ 新增：持久化显示公共的最新情报（投票与任务结果）
+  if (s.last_vote_summary || s.last_mission_summary) {
+    let history = '';
+    if (s.last_vote_summary) history += `<span class="info-tag" style="background:rgba(201,162,39,.1);border:1px solid var(--gold-dim);color:var(--parchment)">🗳️ 上轮投票: ${s.last_vote_summary}</span>`;
+    if (s.last_mission_summary) history += `<span class="info-tag" style="background:rgba(201,162,39,.1);border:1px solid var(--gold-dim);color:var(--parchment)">⚔️ 上轮任务: ${s.last_mission_summary}</span>`;
+    html += `<div class="info-panel"><h4>📜 最新情报</h4><div class="info-list" style="margin-top:.4rem">${history}</div></div>`;
+  }
+  
   return html;
 }
 
