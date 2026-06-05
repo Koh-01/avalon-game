@@ -646,11 +646,11 @@ async function fetchWithTimeout(url, options = {}, timeout = 8000) {
 async function wakeServer(statusEl) {
   for (let i = 0; i < 15; i++) {
     try {
-      const r = await fetchWithTimeout('/health', {}, 5000);
-      if (r.ok) return true;
+      const resp = await fetchWithTimeout('/health', {}, 5000);
+      if (resp.ok) return true;
     } catch(e) { /* 继续等待 */ }
     if (statusEl) statusEl.textContent = `服务器启动中，请稍候… (${i+1}/15)`;
-    await new Promise(r => setTimeout(r, 4000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
   }
   return false;
 }
