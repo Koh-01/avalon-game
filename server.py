@@ -152,7 +152,7 @@ def make_public_state(game: Game, viewer_id: str):
         "leader_id": game.leader().id if game.players else "",
         "players": players_info,
         "winner": game.winner,
-        "assassin_target": game.assassin_target, # 修复：加入刺客目标
+        "assassin_target": game.assassin_target,
         "host_id": game.host_id,
         "my_id": viewer_id,
         "my_role": viewer_role,
