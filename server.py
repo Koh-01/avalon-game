@@ -1,20 +1,3 @@
-*(当你在 Git 提交并推送后，Render 看到这个文件就会自动帮你下载声网的加密算法包。)*
-
----
-
-### 第二步：更新 `server.py` (自动生成免费 Token)
-
-我们在服务端的 `/api/sync`（同步状态接口）中加入了一段逻辑：当玩家在线时，后端会自动用你的 `App ID` 和 `Primary Certificate` 免费计算出一个临时语音 Token，并在大厅和游戏期间实时下发给前端。
-
-**请用以下完整代码覆盖你的 `server.py`：**
-
-```python
-#!/usr/bin/env python3
-"""
-阿瓦隆 (Avalon) 网络游戏服务器 - HTTP 长轮询版 + 自动免费语音 Token
-彻底移除 WebSocket，完美适配 Render 免费层
-"""
-
 import asyncio
 import json
 import random
