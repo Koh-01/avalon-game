@@ -52,8 +52,8 @@ class Player:
 @dataclass
 class Game:
     room_id: str
-    version: int = 0                              # ★ 核心：状态版本号
-    notifications: list = field(default_factory=list) # ★ 核心：通知队列
+    version: int = 0
+    notifications: list = field(default_factory=list)
     players: list = field(default_factory=list)
     host_id: str = ""
     phase: str = "lobby"
@@ -67,6 +67,9 @@ class Game:
     winner: Optional[str] = None
     assassin_target: Optional[str] = None
     night_ack: set = field(default_factory=set)
+    # ★ 新增：持久化记录上一轮的结果
+    last_vote_summary: str = ""
+    last_mission_summary: str = ""
 
     def good_wins(self): return self.quest_results.count(True) >= 3
     def evil_wins(self): return self.quest_results.count(False) >= 3
@@ -76,7 +79,6 @@ class Game:
     def evil_players(self): return [p for p in self.players if p.role and ROLES[p.role]["team"] == "evil"]
     
     def touch(self):
-        """任何状态改变时调用，递增版本号唤醒轮询"""
         self.version += 1
 
     def notify(self, msg: str, color: str = "white"):
@@ -125,6 +127,8 @@ def make_public_state(game: Game, viewer_id: str):
         "visible_evil_to_merlin": visible_evil, "visible_to_percival": visible_percival,
         "voted": viewer_id in game.votes, "mission_played": viewer_id in game.mission_cards,
         "vote_tally": len(game.votes), "mission_tally": len(game.mission_cards), "total_players": len(game.players),
+        "last_vote_summary": game.last_vote_summary,       # ★ 传给前端
+        "last_mission_summary": game.last_mission_summary  # ★ 传给前端
     }
 
 # ─────────────────────────────────────────
@@ -134,10 +138,12 @@ def make_public_state(game: Game, viewer_id: str):
 def process_vote(game: Game):
     approve = sum(1 for v in game.votes.values() if v)
     reject = len(game.votes) - approve
+    game.last_vote_summary = f"{approve} 赞成 / {reject} 反对" # ★ 记录投票结果
+    
     if approve > reject:
         game.phase = "execute"
         game.mission_cards = {}
-        game.notify(f"✅ 投票通过！({approve}赞成/{reject}反对) 队员开始执行任务...", "green")
+        game.notify(f"✅ 投票通过！({game.last_vote_summary}) 队员开始执行任务...", "green")
         game.vote_reject_count = 0
     else:
         game.vote_reject_count += 1
@@ -146,20 +152,26 @@ def process_vote(game: Game):
         if game.vote_reject_count >= 3:
             game.leader_idx = (game.leader_idx + 1) % len(game.players)
             game.phase = "quest"
-            game.notify(f"❌ 再次拒绝！({approve}赞成/{reject}反对) 连续3次拒绝，下一位领袖强制执行！", "red")
+            game.notify(f"❌ 连续3次拒绝！({game.last_vote_summary}) 下一位领袖强制执行！", "red")
         else:
             game.leader_idx = (game.leader_idx + 1) % len(game.players)
             game.phase = "quest"
-            game.notify(f"❌ 投票未通过！({approve}赞成/{reject}反对) 换下一位领袖...", "orange")
+            game.notify(f"❌ 投票未通过！({game.last_vote_summary}) 换下一位领袖...", "orange")
 
 def process_mission(game: Game):
     cards = list(game.mission_cards.values())
+    random.shuffle(cards)
     fail_count = cards.count(False)
+    success_count = cards.count(True)
     need_fails = 2 if (len(game.players) >= 7 and game.round == 3) else 1
     success = fail_count < need_fails
 
     game.quest_results.append(success)
-    game.notify(f"第{game.round+1}轮任务：{'✅ 成功！' if success else f'❌ 失败！(有{fail_count}张失败牌)'}", "green" if success else "red")
+    game.last_mission_summary = f"{success_count} 成功 / {fail_count} 失败" # ★ 记录任务结果
+    
+    result_str = f"✅ 任务成功！({game.last_mission_summary})" if success else f"❌ 任务失败！({game.last_mission_summary})"
+    color = "green" if success else "red"
+    game.notify(f"第{game.round+1}轮任务：{result_str}", color)
 
     if game.good_wins():
         game.phase = "assassinate"
@@ -205,7 +217,6 @@ async def api_join(request):
     return web.json_response({"status": "ok"})
 
 async def api_sync(request):
-    """长轮询接口：拉取最新状态"""
     room_id = request.rel_url.query.get("room_id")
     player_id = request.rel_url.query.get("player_id")
     client_v = int(request.rel_url.query.get("v", -1))
@@ -213,11 +224,9 @@ async def api_sync(request):
     game = rooms.get(room_id)
     if not game: return web.json_response({"error": "房间已解散"}, status=404)
     
-    # 保持在线状态
     p = game.get_player(player_id)
     if p: p.online = True
 
-    # ★ 长轮询机制：如果版本一致，挂起等待最多 15 秒
     for _ in range(30):
         if game.version != client_v:
             break
@@ -230,7 +239,6 @@ async def api_sync(request):
     })
 
 async def api_action(request):
-    """处理玩家的所有动作"""
     data = await request.json()
     game = rooms.get(data.get("room_id"))
     if not game: return web.json_response({"error": "Game not found"}, status=400)
@@ -251,6 +259,7 @@ async def api_action(request):
             game.round, game.vote_reject_count, game.phase = 0, 0, "night"
             game.leader_idx = random.randint(0, n - 1)
             game.team, game.votes, game.mission_cards, game.quest_results, game.night_ack = [], {}, {}, [], set()
+            game.last_vote_summary, game.last_mission_summary = "", "" # ★ 清空记录
             game.notify("🌙 夜晚降临，请查看您的角色信息...", "purple")
 
     elif action == "night_ack":
@@ -293,6 +302,7 @@ async def api_action(request):
         game.phase = "lobby"
         game.round, game.vote_reject_count, game.winner, game.assassin_target = 0, 0, None, None
         game.team, game.votes, game.mission_cards, game.quest_results, game.night_ack = [], {}, {}, [], set()
+        game.last_vote_summary, game.last_mission_summary = "", "" # ★ 清空记录
         for p in game.players: p.role = None
         game.notify(f"🔄 房主重置了游戏，回到大厅", "orange")
 
@@ -300,7 +310,6 @@ async def api_action(request):
 
 
 async def index(request):
-    """直接读取同一层级的 index.html"""
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(BASE_DIR, 'index.html')
     if os.path.exists(file_path):
