@@ -93,6 +93,8 @@ class Game:
     def good_players(self):
         return [p for p in self.players if p.role and ROLES[p.role]["team"] == "good"]
 
+rooms: dict[str, Game] = {}
+
 # ─────────────────────────────────────────
 #  工具函数
 # ─────────────────────────────────────────
