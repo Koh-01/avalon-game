@@ -460,24 +460,23 @@ async def create_room(request):
     return web.json_response({"room_id": room_id})
 
 async def index(request):
-    raise web.HTTPFound('/static/index.html')
-
-def build_app():
+    """直接读取同一文件夹下的 index.html"""
     import os
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    static_path = os.path.join(BASE_DIR, 'static')
-    os.makedirs(static_path, exist_ok=True)
+    file_path = os.path.join(BASE_DIR, 'index.html')
+    if os.path.exists(file_path):
+        return web.FileResponse(file_path)
+    return web.Response(text="⚠️ 找不到 index.html，请确保它和 server.py 放在同一个文件夹里！", status=404)
 
+def build_app():
     @web.middleware
     async def cors_middleware(request, handler):
-        # 修复：预检请求处理
         if request.method == 'OPTIONS':
             resp = web.Response()
             resp.headers['Access-Control-Allow-Origin'] = '*'
             resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
             resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
             return resp
-            
         try:
             resp = await handler(request)
         except web.HTTPException:
@@ -485,7 +484,6 @@ def build_app():
         except Exception as e:
             raise
             
-        # 修复：如果是 WebSocket，不要去修改 Headers
         if not isinstance(resp, web.WebSocketResponse):
             resp.headers['Access-Control-Allow-Origin'] = '*'
             resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
@@ -497,7 +495,6 @@ def build_app():
     app.router.add_get('/health', health)
     app.router.add_post('/api/room', create_room)
     app.router.add_get('/ws/{room_id}', ws_handler)
-    app.router.add_static('/static', path=static_path, name='static')
     return app
 
 if __name__ == '__main__':
