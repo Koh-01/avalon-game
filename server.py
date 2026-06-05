@@ -466,13 +466,16 @@ def build_app():
     static_path = os.path.join(BASE_DIR, 'static')
     os.makedirs(static_path, exist_ok=True)
 
+    @web.middleware
     async def cors_middleware(request, handler):
         if request.method == 'OPTIONS':
             resp = web.Response()
         else:
             try:
                 resp = await handler(request)
-            except web.HTTPException as e:
+            except web.HTTPException:
+                raise
+            except Exception as e:
                 raise
         resp.headers['Access-Control-Allow-Origin'] = '*'
         resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
