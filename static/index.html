@@ -486,6 +486,7 @@ body {
     </div>
     <div class="mt-2">
       <button class="btn btn-gold" style="width:100%" onclick="doJoinRoom()">进入阿瓦隆</button>
+      <div id="join-status" style="font-size:.78rem;color:var(--gold-dim);text-align:center;margin-top:.6rem;min-height:1.2em"></div>
     </div>
   </div>
 </div>
@@ -500,6 +501,7 @@ body {
     </div>
     <div class="mt-2">
       <button class="btn btn-gold" style="width:100%" onclick="doCreateRoom()">建立圆桌</button>
+      <div id="create-status" style="font-size:.78rem;color:var(--gold-dim);text-align:center;margin-top:.6rem;min-height:1.2em"></div>
     </div>
   </div>
 </div>
@@ -629,24 +631,68 @@ function showNotify(message, color='white') {
 // ═══════════════════════════════════════════
 //  ROOM CREATE / JOIN
 // ═══════════════════════════════════════════
+
+// 带超时的 fetch（ms）
+async function fetchWithTimeout(url, options = {}, timeout = 8000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const resp = await fetch(url, { ...options, signal: ctrl.signal });
+    clearTimeout(timer);
+    return resp;
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+// 先 ping 服务器，若在休眠则等待唤醒（Render 免费版冷启动最多 60s）
+async function wakeServer(statusEl) {
+  for (let i = 0; i < 15; i++) {
+    try {
+      const r = await fetchWithTimeout('/health', {}, 5000);
+      if (r.ok) return true;
+    } catch(e) { /* 继续等待 */ }
+    if (statusEl) statusEl.textContent = `服务器启动中，请稍候… (${i+1}/15)`;
+    await new Promise(r => setTimeout(r, 4000));
+  }
+  return false;
+}
+
 async function doCreateRoom() {
   const name = document.getElementById('create-name').value.trim();
   if (!name) return alert('请输入名字');
   playerName = name;
   const btn = document.querySelector('#modal-create .btn-gold');
+  const statusEl = document.getElementById('create-status');
   btn.disabled = true;
-  btn.textContent = '创建中...';
+  btn.textContent = '连接服务器…';
+  if (statusEl) statusEl.textContent = '正在唤醒服务器（首次启动约需30秒）…';
+
+  // 先确认服务器活着
+  const alive = await wakeServer(statusEl);
+  if (!alive) {
+    alert('服务器无响应，请稍后刷新页面重试。\n\nRender 免费版首次启动最多需要 60 秒。');
+    btn.disabled = false;
+    btn.textContent = '建立圆桌';
+    if (statusEl) statusEl.textContent = '';
+    return;
+  }
+
+  if (statusEl) statusEl.textContent = '创建房间中…';
   try {
-    const resp = await fetch('/api/room', { method: 'POST' });
+    const resp = await fetchWithTimeout('/api/room', { method: 'POST' }, 10000);
     if (!resp.ok) throw new Error('服务器错误 ' + resp.status);
     const data = await resp.json();
     roomId = data.room_id;
+    if (statusEl) statusEl.textContent = '';
     closeModal('modal-create');
     connectWS();
   } catch(e) {
-    alert('创建房间失败：' + e.message + '\n\n请确认服务器已启动，或刷新页面重试。');
+    alert('创建房间失败：' + e.message);
     btn.disabled = false;
     btn.textContent = '建立圆桌';
+    if (statusEl) statusEl.textContent = '';
   }
 }
 
@@ -658,8 +704,20 @@ async function doJoinRoom() {
   playerName = name;
   roomId = code;
   const btn = document.querySelector('#modal-join .btn-gold');
+  const statusEl = document.getElementById('join-status');
   btn.disabled = true;
-  btn.textContent = '连接中...';
+  btn.textContent = '连接中…';
+  if (statusEl) statusEl.textContent = '正在唤醒服务器…';
+
+  const alive = await wakeServer(statusEl);
+  if (!alive) {
+    alert('服务器无响应，请稍后重试。');
+    btn.disabled = false;
+    btn.textContent = '进入阿瓦隆';
+    if (statusEl) statusEl.textContent = '';
+    return;
+  }
+  if (statusEl) statusEl.textContent = '';
   closeModal('modal-join');
   connectWS();
 }
