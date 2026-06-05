@@ -447,6 +447,9 @@ async def ws_handler(request):
     await notify(game, f"📴 {player.name} 断线了", "gray")
     return ws
 
+async def health(request):
+    return web.json_response({"status": "ok", "rooms": len(rooms)})
+
 async def create_room(request):
     room_id = ''.join(random.choices('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', k=5))
     while room_id in rooms:
@@ -462,8 +465,23 @@ def build_app():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     static_path = os.path.join(BASE_DIR, 'static')
     os.makedirs(static_path, exist_ok=True)
-    app = web.Application()
+
+    async def cors_middleware(request, handler):
+        if request.method == 'OPTIONS':
+            resp = web.Response()
+        else:
+            try:
+                resp = await handler(request)
+            except web.HTTPException as e:
+                raise
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return resp
+
+    app = web.Application(middlewares=[cors_middleware])
     app.router.add_get('/', index)
+    app.router.add_get('/health', health)
     app.router.add_post('/api/room', create_room)
     app.router.add_get('/ws/{room_id}', ws_handler)
     app.router.add_static('/static', path=static_path, name='static')
